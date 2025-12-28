@@ -40,7 +40,7 @@ const buildMimeMessage = (params: SendCensusEmailParams) => {
     const mailSubject = subject || buildCensusEmailSubject(date);
     const baseBody = body || buildCensusEmailBody(date, nursesSignature, encryptionPin);
     // Audit line removed per user request
-    const mailBody = baseBody;
+    const mailBodyBase64 = Buffer.from(baseBody).toString('base64');
     const attachmentBase64 = Buffer.isBuffer(attachmentBuffer)
         ? attachmentBuffer.toString('base64')
         : Buffer.from(attachmentBuffer).toString('base64');
@@ -49,17 +49,17 @@ const buildMimeMessage = (params: SendCensusEmailParams) => {
         'Content-Type: multipart/mixed; boundary="' + boundary + '"',
         'MIME-Version: 1.0',
         'Content-Language: es-CL',
-        'From: hospitalizados@hospitalhangaroa.cl',
+        'From: "Hospital Hanga Roa" <hospitalizados@hospitalhangaroa.cl>',
         'To: ' + recipients.join(', '),
         'Subject: ' + mailSubject,
         '',
         '--' + boundary,
-        'Content-Type: text/plain; charset=UTF-8; format=flowed',
+        'Content-Type: text/plain; charset=UTF-8',
         'Content-Language: es-CL',
-        'Content-Transfer-Encoding: 8bit',
+        'Content-Transfer-Encoding: base64',
         'Content-Disposition: inline',
         '',
-        mailBody,
+        mailBodyBase64,
         '',
         '--' + boundary,
         'Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet; name="' + attachmentName + '"',
