@@ -291,10 +291,22 @@ export const initializeDay = async (
     date: string,
     copyFromDate?: string
 ): Promise<DailyRecord> => {
-    const records = demoModeActive ? getDemoRecords() : getStoredRecords();
+    // 1. Check if record already exists in LocalStorage or Firestore
+    const localRecords = demoModeActive ? getDemoRecords() : getStoredRecords();
+    if (localRecords[date]) return localRecords[date];
 
-    // If record already exists, return it
-    if (records[date]) return records[date];
+    if (!demoModeActive && firestoreEnabled) {
+        try {
+            const remoteRecord = await getRecordFromFirestore(date);
+            if (remoteRecord) {
+                console.log(`[Repository] Found existing record in Firestore for ${date}. Skipping initialization.`);
+                saveRecordLocal(remoteRecord);
+                return remoteRecord;
+            }
+        } catch (err) {
+            console.warn(`[Repository] Failed to check Firestore for ${date} during init:`, err);
+        }
+    }
 
     let initialBeds: Record<string, PatientData> = {};
     let activeExtras: string[] = [];
@@ -310,8 +322,8 @@ export const initializeDay = async (
     let tensNight: string[] = ["", "", ""];
 
     // If a copyFromDate is provided, copy active patients and staff
-    if (copyFromDate && records[copyFromDate]) {
-        const prevRecord = records[copyFromDate];
+    if (copyFromDate && localRecords[copyFromDate]) {
+        const prevRecord = localRecords[copyFromDate];
         const prevBeds = prevRecord.beds;
 
         // Inherit staff: Previous night shift becomes the starting staff for the new day shift

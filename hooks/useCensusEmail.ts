@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useConfirmDialog } from '../context/UIContext';
 import { DailyRecord } from '../types';
 import { buildCensusEmailBody, CENSUS_DEFAULT_RECIPIENTS } from '../constants/email';
-import { formatDate, getMonthRecordsFromFirestore, triggerCensusEmail } from '../services';
+import { formatDate, getMonthRecordsFromFirestore, triggerCensusEmail, initializeDay } from '../services';
 import { isAdmin } from '../utils/permissions';
 
 interface UseCensusEmailParams {
@@ -194,6 +194,28 @@ export const useCensusEmail = ({
     setStatus('loading');
 
     try {
+      // 1. Ensure all days of the month up to the selected day are initialized
+      // This is CRITICAL to ensure the report is complete and carries over patients correctly
+      const ensureAllDaysInitialized = async () => {
+        const [year, month, day] = currentDateString.split('-').map(Number);
+        const dayNum = parseInt(selectedDay.toString(), 10);
+
+        console.log(`[useCensusEmail] Starting month integrity check up to ${currentDateString}`);
+
+        for (let d = 1; d <= dayNum; d++) {
+          const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+          // Check if day exists (either in provided month records or is the current one)
+          // Note: we'll re-fetch below, but here we ensure they exist in DB
+          try {
+            await initializeDay(dateStr, d > 1 ? `${year}-${String(month).padStart(2, '0')}-${String(d - 1).padStart(2, '0')}` : undefined);
+          } catch (e) {
+            console.warn(`[useCensusEmail] Failed to initialize day ${dateStr}:`, e);
+          }
+        }
+      };
+
+      await ensureAllDaysInitialized();
+
       const finalMessage = message?.trim() ? message : buildCensusEmailBody(currentDateString, nurseSignature);
       const monthRecords = await getMonthRecordsFromFirestore(selectedYear, selectedMonth);
       const limitDate = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`;

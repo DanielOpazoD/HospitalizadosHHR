@@ -118,41 +118,44 @@ export const useDailyRecordSync = (currentDateString: string, isOfflineMode: boo
     }, [currentDateString]);
 
     // ========================================================================
-    // Initial / Reconnection Sync
+    // Initial / Reconnection Sync (Force Pull from Firestore)
     // ========================================================================
     useEffect(() => {
         // This effect runs once when date changes and auth is ready.
-        // It implements offline-first: local changes take priority.
+        // It ensures we have the absolute latest version from Firestore at boot.
         const unsubscribe = auth.onAuthStateChanged((user) => {
             if (user && navigator.onLine) {
-                const localRecord = getForDate(currentDateString);
+                console.log('[useDailyRecordSync] Component mount/online - performing deep sync for:', currentDateString);
 
-                // If we have local data, sync TO Firestore (push local changes)
-                if (localRecord) {
-                    console.log('[useDailyRecordSync] Auth ready + online - pushing local changes to Firestore for:', currentDateString);
-                    save(localRecord).then(() => {
-                        console.log('[useDailyRecordSync] ✅ Pushed local record to Firestore:', currentDateString);
-                        setSyncStatus('saved');
-                        setLastSyncTime(new Date());
-                    }).catch((err) => {
-                        console.warn('[useDailyRecordSync] Failed to push local to Firestore:', err);
-                    });
-                } else {
-                    // No local data, pull from Firestore
-                    console.log('[useDailyRecordSync] No local data - pulling from Firestore for:', currentDateString);
-                    syncWithFirestore(currentDateString).then((syncedRecord: DailyRecord | null) => {
-                        if (syncedRecord) {
-                            setRecord(syncedRecord);
+                // Always check Firestore for the latest version
+                syncWithFirestore(currentDateString).then((remoteRecord: DailyRecord | null) => {
+                    const localRecord = getForDate(currentDateString);
+
+                    if (remoteRecord) {
+                        // We found a record in Firestore
+                        if (!localRecord || new Date(remoteRecord.lastUpdated) > new Date(localRecord.lastUpdated)) {
+                            console.log('[useDailyRecordSync] Firestore version is newer (or no local data). Updating state.');
+                            setRecord(remoteRecord);
                             setSyncStatus('saved');
                             setLastSyncTime(new Date());
-                            console.log('[useDailyRecordSync] ✅ Pulled record from Firestore to LocalStorage:', currentDateString);
+                        } else {
+                            console.log('[useDailyRecordSync] Local version is newer or equal. Keeping local.');
+                            setRecord(localRecord);
                         }
-                    });
-                }
+                    } else if (localRecord) {
+                        // No Firestore record but we have local record (maybe newly created offline)
+                        console.log('[useDailyRecordSync] Local data found but no Firestore record. Pushing local to cloud.');
+                        save(localRecord).then(() => {
+                            setSyncStatus('saved');
+                            setLastSyncTime(new Date());
+                        });
+                    }
+                }).catch(err => {
+                    console.error('[useDailyRecordSync] Deep sync failed:', err);
+                });
             }
         });
 
-        // Cleanup to avoid memory leaks if effect re-runs
         return () => unsubscribe();
     }, [currentDateString]);
 
