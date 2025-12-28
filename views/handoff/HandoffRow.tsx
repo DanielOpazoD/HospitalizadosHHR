@@ -3,6 +3,7 @@ import { PatientData, PatientStatus } from '../../types';
 import { Baby, AlertCircle, Clock } from 'lucide-react';
 import clsx from 'clsx';
 import { formatDateDDMMYYYY } from '../../services/dataService';
+import { calculateDeviceDays } from '../../components/device-selector/DeviceDateConfigModal';
 
 // ============================================================================
 // Utilities
@@ -10,6 +11,7 @@ import { formatDateDDMMYYYY } from '../../services/dataService';
 
 /**
  * Calculate days since admission
+ * Inclusion: The admission day counts as Day 1.
  */
 export const calculateHospitalizedDays = (admissionDate?: string, currentDate?: string): number | null => {
     if (!admissionDate || !currentDate) return null;
@@ -19,7 +21,8 @@ export const calculateHospitalizedDays = (admissionDate?: string, currentDate?: 
     end.setHours(0, 0, 0, 0);
     const diff = end.getTime() - start.getTime();
     const days = Math.floor(diff / (1000 * 3600 * 24));
-    return days >= 0 ? days : 0;
+    const totalDays = days + 1;
+    return totalDays >= 1 ? totalDays : 1;
 };
 
 // ============================================================================
@@ -200,12 +203,7 @@ export const HandoffRow: React.FC<HandoffRowProps> = ({
                             const deviceKey = d as keyof typeof details;
                             const deviceInfo = details[deviceKey];
                             if (deviceInfo?.installationDate) {
-                                const installDate = new Date(deviceInfo.installationDate);
-                                const reportDateObj = new Date(reportDate);
-                                installDate.setHours(0, 0, 0, 0);
-                                reportDateObj.setHours(0, 0, 0, 0);
-                                const diff = reportDateObj.getTime() - installDate.getTime();
-                                deviceDays = Math.max(0, Math.floor(diff / (1000 * 3600 * 24)));
+                                deviceDays = calculateDeviceDays(deviceInfo.installationDate, reportDate);
                             }
                         }
                         return (

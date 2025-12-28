@@ -18,6 +18,7 @@ export const DEVICE_LABELS: Record<TrackedDevice, string> = {
 
 /**
  * Calculate days since installation
+ * Inclusion: The installation day counts as Day 1.
  */
 export const calculateDeviceDays = (installDate?: string, currentDate?: string): number | null => {
     if (!installDate || !currentDate) return null;
@@ -27,7 +28,9 @@ export const calculateDeviceDays = (installDate?: string, currentDate?: string):
     end.setHours(0, 0, 0, 0);
     const diff = end.getTime() - start.getTime();
     const days = Math.floor(diff / (1000 * 3600 * 24));
-    return days >= 0 ? days : 0;
+    // The first day (installation) counts as Day 1
+    const totalDays = days + 1;
+    return totalDays >= 1 ? totalDays : 1;
 };
 
 interface DeviceDateConfigModalProps {
