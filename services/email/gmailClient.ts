@@ -53,7 +53,7 @@ const buildMimeMessage = (params: SendCensusEmailParams) => {
         'subject: ' + mailSubject,
         '',
         '--' + boundary,
-        'Content-Type: text/html; charset="UTF-8"',
+        'Content-Type: text/plain; charset="UTF-8"',
         'MIME-Version: 1.0',
         'Content-Transfer-Encoding: 7bit',
         '',

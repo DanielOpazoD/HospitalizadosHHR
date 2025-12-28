@@ -66,32 +66,32 @@ export const useHandoffLogic = ({
         return selectedShift === 'day' ? 'handoffNoteDayShift' : 'handoffNoteNightShift';
     }, [record, isMedical, selectedShift]);
 
-    // Staff lists - Auto-populate from census if handoff-specific lists are empty
+    // Staff lists - Use census data directly for display
+    // The census is the source of truth for who is working each shift
     const deliversList = useMemo(() => {
         if (!record) return [];
-        if (selectedShift === 'day') {
-            const handoffList = record.handoffDayDelivers || [];
-            return !isActuallyEmpty(handoffList) ? handoffList : (record.nursesDayShift || []);
-        } else {
-            const handoffList = record.handoffNightDelivers || [];
-            return !isActuallyEmpty(handoffList) ? handoffList : (record.nursesNightShift || []);
-        }
+        // Day shift: nurses delivering are the day shift nurses
+        // Night shift: nurses delivering are the night shift nurses
+        const list = selectedShift === 'day'
+            ? (record.nursesDayShift || [])
+            : (record.nursesNightShift || []);
+        return list;
     }, [record, selectedShift]);
 
     const receivesList = useMemo(() => {
         if (!record) return [];
-        if (selectedShift === 'day') {
-            const handoffList = record.handoffDayReceives || [];
-            // In day shift handoff, the receivers are typically the night shift nurses (fallback)
-            return !isActuallyEmpty(handoffList) ? handoffList : (record.nursesNightShift || []);
-        } else {
-            return record.handoffNightReceives || [];
-        }
+        // Day shift: nurses receiving are typically the night shift nurses
+        // Night shift: nurses receiving are typically the next day's nurses (not available, so empty or same)
+        const list = selectedShift === 'day'
+            ? (record.nursesNightShift || [])
+            : (record.nursesDayShift || []); // or could be empty for night
+        return list;
     }, [record, selectedShift]);
 
     const tensList = useMemo(() => {
         if (!record) return [];
-        return selectedShift === 'day' ? (record.tensDayShift || []) : (record.tensNightShift || []);
+        const list = selectedShift === 'day' ? (record.tensDayShift || []) : (record.tensNightShift || []);
+        return list;
     }, [record, selectedShift]);
 
     // ========== HANDLERS ==========

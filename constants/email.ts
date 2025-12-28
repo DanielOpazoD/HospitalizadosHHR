@@ -28,8 +28,7 @@ export const CENSUS_DEFAULT_RECIPIENTS = [
 export const buildCensusEmailSubject = (date: string) => `Censo diario pacientes hospitalizados - ${formatDateDDMMYYYY(date)}`;
 
 /**
- * Builds the census email body in HTML format.
- * Includes a blue-red separator line before the nurse signature.
+ * Builds the census email body in plain text format.
  */
 export const buildCensusEmailBody = (date: string, nursesSignature?: string, encryptionPin?: string): string => {
     // Parse date to get day, month name, year
@@ -43,43 +42,23 @@ export const buildCensusEmailBody = (date: string, nursesSignature?: string, enc
 
     // Security note
     const securityNote = encryptionPin
-        ? `<p><strong>Clave Excel:</strong> ${encryptionPin}</p>`
+        ? `\nClave Excel: ${encryptionPin}\n`
         : '';
 
-    // Visual separator: blue and red horizontal lines
-    const separator = `
-        <div style="margin: 20px 0 10px 0;">
-            <div style="height: 3px; background-color: #1a237e; width: 200px;"></div>
-            <div style="height: 3px; background-color: #c62828; width: 200px; margin-top: 2px;"></div>
-        </div>
-    `;
+    // Visual separator using Unicode horizontal lines
+    const separator = '\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
 
     // Nurse signature block
     const signatureBlock = nursesSignature
-        ? `${separator}
-           <p style="margin: 0;"><strong>${nursesSignature}</strong></p>
-           <p style="margin: 0; color: #555;">Enfermería - Servicio Hospitalizados</p>
-           <p style="margin: 0; color: #555;">Hospital Hanga Roa</p>
-           <p style="margin: 0; color: #555;">Anexo MINSAL 328388</p>`
-        : `${separator}
-           <p style="margin: 0; color: #555;">Enfermería - Servicio Hospitalizados</p>
-           <p style="margin: 0; color: #555;">Hospital Hanga Roa</p>
-           <p style="margin: 0; color: #555;">Anexo MINSAL 328388</p>`;
+        ? `${separator}${nursesSignature}\nEnfermería - Servicio Hospitalizados\nHospital Hanga Roa\nAnexo MINSAL 328388`
+        : `${separator}Enfermería - Servicio Hospitalizados\nHospital Hanga Roa\nAnexo MINSAL 328388`;
 
-    return `
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-</head>
-<body style="font-family: Arial, sans-serif; font-size: 14px; color: #333; line-height: 1.5;">
-    <p>Estimados.</p>
-    <p>Junto con saludar, envío adjunto planilla estadística de pacientes hospitalizados correspondiente al día ${dayNum} de ${monthName} de ${year}.</p>
-    ${securityNote}
-    <p>Saludos cordiales</p>
-    ${signatureBlock}
-</body>
-</html>
-    `.trim();
+    return [
+        'Estimados.',
+        '',
+        `Junto con saludar, envío adjunto planilla estadística de pacientes hospitalizados correspondiente al día ${dayNum} de ${monthName} de ${year}.`,
+        securityNote,
+        'Saludos cordiales',
+        signatureBlock
+    ].join('\n');
 };
-
