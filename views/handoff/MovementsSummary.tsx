@@ -25,27 +25,29 @@ export const MovementsSummary: React.FC<MovementsSummaryProps> = ({ record }) =>
                 {(!record.discharges || record.discharges.length === 0) ? (
                     <p className="text-slate-400 italic text-sm print:text-[10px]">No hay altas registradas hoy.</p>
                 ) : (
-                    <table className="w-full text-left text-sm print:text-[10px] border-collapse print:[&_th]:p-1 print:[&_td]:p-1">
+                    <table className="w-full text-left text-sm print:text-[10px] border-collapse print:[&_th]:p-1 print:[&_td]:p-1 print:table-fixed">
                         <thead>
                             <tr className="border-b border-slate-200 text-slate-500 text-xs uppercase font-bold">
-                                <th className="p-2 border-r border-slate-200 w-20">Cama</th>
-                                <th className="p-2 border-r border-slate-200">Paciente/RUT</th>
-                                <th className="p-2 border-r border-slate-200">Diagnóstico</th>
-                                <th className="p-2 border-r border-slate-200">Tipo Alta</th>
-                                <th className="p-2 w-24">Estado</th>
+                                <th className="p-2 border-r border-slate-200 w-24 print:w-12">Cama</th>
+                                <th className="p-2 border-r border-slate-200 w-64 print:w-40">Paciente / Rut</th>
+                                <th className="p-2 border-r border-slate-200 w-80 print:w-56">Diagnóstico</th>
+                                <th className="p-2 border-r border-slate-200">Tipo de alta</th>
+                                <th className="p-2 border-r border-slate-200 w-24 print:w-20">Estado</th>
+                                <th className="p-2 w-24 print:w-20">Hora Egreso</th>
                             </tr>
                         </thead>
                         <tbody>
                             {record.discharges.map(d => (
                                 <tr key={d.id} className="border-b border-slate-100 print:border-slate-300 print:text-[10px]">
-                                    <td className="p-2 border-r border-slate-200">{d.bedName}</td>
-                                    <td className="p-2 border-r border-slate-200">
-                                        <div className="font-medium print:text-[10px]">{d.patientName}</div>
-                                        <div className="text-xs text-slate-500 font-mono print:text-[9px]">{d.rut}</div>
+                                    <td className="p-2 border-r border-slate-200 truncate">{d.bedName}</td>
+                                    <td className="p-2 border-r border-slate-200 truncate">
+                                        <div className="font-medium print:text-[9px] truncate">{d.patientName}</div>
+                                        <div className="text-[10px] text-slate-500 font-mono print:text-[8px]">{d.rut}</div>
                                     </td>
-                                    <td className="p-2 border-r border-slate-200">{d.diagnosis}</td>
-                                    <td className="p-2 border-r border-slate-200">{d.dischargeType}</td>
-                                    <td className="p-2">{d.status}</td>
+                                    <td className="p-2 border-r border-slate-200 truncate">{d.diagnosis}</td>
+                                    <td className="p-2 border-r border-slate-200 truncate">{d.dischargeTypeOther || d.dischargeType}</td>
+                                    <td className="p-2 border-r border-slate-200">{d.status}</td>
+                                    <td className="p-2">{d.time || '-'}</td>
                                 </tr>
                             ))}
                         </tbody>
@@ -62,20 +64,31 @@ export const MovementsSummary: React.FC<MovementsSummaryProps> = ({ record }) =>
                 {(!record.transfers || record.transfers.length === 0) ? (
                     <p className="text-slate-400 italic text-sm print:text-[10px]">No hay traslados registrados hoy.</p>
                 ) : (
-                    <table className="w-full text-left text-sm print:text-[10px] border-collapse print:[&_th]:p-1 print:[&_td]:p-1">
+                    <table className="w-full text-left text-sm print:text-[10px] border-collapse print:[&_th]:p-1 print:[&_td]:p-1 print:table-fixed">
                         <thead>
                             <tr className="border-b border-slate-200 text-slate-500 text-xs uppercase font-bold">
-                                <th className="p-2 border-r border-slate-200 w-24">Cama Origen</th>
-                                <th className="p-2 border-r border-slate-200">Paciente</th>
-                                <th className="p-2 w-48">Destino</th>
+                                <th className="p-2 border-r border-slate-200 w-24 print:w-12">Cama</th>
+                                <th className="p-2 border-r border-slate-200 w-64 print:w-32">Paciente / Rut</th>
+                                <th className="p-2 border-r border-slate-200 w-80 print:w-40">Diagnóstico</th>
+                                <th className="p-2 border-r border-slate-200 print:w-20">Medio</th>
+                                <th className="p-2 border-r border-slate-200 print:w-32">Centro Destino</th>
+                                <th className="p-2 border-r border-slate-200 print:w-24">Acompañante</th>
+                                <th className="p-2 w-24 print:w-20">Hora Egreso</th>
                             </tr>
                         </thead>
                         <tbody>
                             {record.transfers.map(t => (
                                 <tr key={t.id} className="border-b border-slate-100 print:border-slate-300 print:text-[10px]">
-                                    <td className="p-2 border-r border-slate-200">{t.bedName}</td>
-                                    <td className="p-2 border-r border-slate-200">{t.patientName}</td>
-                                    <td className="p-2">{t.receivingCenter === 'Otro' ? t.receivingCenterOther : t.receivingCenter}</td>
+                                    <td className="p-2 border-r border-slate-200 truncate">{t.bedName}</td>
+                                    <td className="p-2 border-r border-slate-200 truncate">
+                                        <div className="font-medium print:text-[9px] truncate">{t.patientName}</div>
+                                        <div className="text-[10px] text-slate-500 font-mono print:text-[8px]">{t.rut}</div>
+                                    </td>
+                                    <td className="p-2 border-r border-slate-200 truncate">{t.diagnosis}</td>
+                                    <td className="p-2 border-r border-slate-200 truncate">{t.evacuationMethod}</td>
+                                    <td className="p-2 border-r border-slate-200 truncate">{t.receivingCenter === 'Otro' ? t.receivingCenterOther : t.receivingCenter}</td>
+                                    <td className="p-2 border-r border-slate-200 truncate">{t.transferEscort || '-'}</td>
+                                    <td className="p-2">{t.time || '-'}</td>
                                 </tr>
                             ))}
                         </tbody>
@@ -92,24 +105,25 @@ export const MovementsSummary: React.FC<MovementsSummaryProps> = ({ record }) =>
                 {(!record.cma || record.cma.length === 0) ? (
                     <p className="text-slate-400 italic text-sm print:text-[10px]">No hay pacientes de CMA hoy.</p>
                 ) : (
-                    <table className="w-full text-left text-sm print:text-[10px] border-collapse print:[&_th]:p-1 print:[&_td]:p-1">
+                    <table className="w-full text-left text-sm print:text-[10px] border-collapse print:[&_th]:p-1 print:[&_td]:p-1 print:table-fixed">
                         <thead>
                             <tr className="border-b border-slate-200 text-slate-500 text-xs uppercase font-bold">
-                                <th className="p-2 border-r border-slate-200 w-20">Cama</th>
-                                <th className="p-2 border-r border-slate-200">Paciente</th>
-                                <th className="p-2 border-r border-slate-200">Diagnóstico</th>
-                                <th className="p-2 w-24">Hora</th>
+                                <th className="p-2 border-r border-slate-200 w-24 print:w-16">Cama</th>
+                                <th className="p-2 border-r border-slate-200 w-64 print:w-56">Paciente / Rut</th>
+                                <th className="p-2 border-r border-slate-200 w-80 print:w-72">Diagnóstico</th>
+                                <th className="p-2">Tipo</th>
                             </tr>
                         </thead>
                         <tbody>
                             {record.cma.map(c => (
                                 <tr key={c.id} className="border-b border-slate-100 print:border-slate-300 print:text-[10px]">
-                                    <td className="p-2 border-r border-slate-200">{c.bedName}</td>
-                                    <td className="p-2 border-r border-slate-200">{c.patientName}</td>
-                                    <td className="p-2 border-r border-slate-200">{c.diagnosis}</td>
-                                    <td className="p-2">
-                                        {c.timestamp ? new Date(c.timestamp).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }) : '-'}
+                                    <td className="p-2 border-r border-slate-200 truncate">{c.bedName}</td>
+                                    <td className="p-2 border-r border-slate-200 truncate">
+                                        <div className="font-medium print:text-[9px] truncate">{c.patientName}</div>
+                                        <div className="text-[10px] text-slate-500 font-mono print:text-[8px]">{c.rut}</div>
                                     </td>
+                                    <td className="p-2 border-r border-slate-200 truncate">{c.diagnosis}</td>
+                                    <td className="p-2 truncate">{c.interventionType}</td>
                                 </tr>
                             ))}
                         </tbody>

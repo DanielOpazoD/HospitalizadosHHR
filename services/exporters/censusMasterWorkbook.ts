@@ -223,7 +223,8 @@ function addCensusTable(sheet: Worksheet, record: DailyRecord, startRow: number)
 
     BEDS.forEach(bed => {
         const patient = record.beds[bed.id];
-        const shouldRenderExtra = !bed.isExtra || activeExtras.includes(bed.id) || Boolean(patient);
+        // Only include extra beds if they are occupied (have a patient name)
+        const shouldRenderExtra = !bed.isExtra || Boolean(patient?.patientName?.trim());
         if (!shouldRenderExtra) return;
 
         const hasClinicalCrib = Boolean(patient?.clinicalCrib?.patientName?.trim());

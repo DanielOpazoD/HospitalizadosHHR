@@ -162,7 +162,7 @@ export const HandoffRow: React.FC<HandoffRowProps> = ({
                             <span key={d} className="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200 text-[10px] flex items-center gap-0.5 print:text-[9px] print:bg-transparent print:border-none print:p-0">
                                 {d}
                                 {deviceDays !== null && deviceDays > 0 && (
-                                    <span className="font-bold text-orange-600">({deviceDays}d)</span>
+                                    <span className="font-bold text-slate-500">({deviceDays}d)</span>
                                 )}
                             </span>
                         );
