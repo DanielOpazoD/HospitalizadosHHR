@@ -171,6 +171,8 @@ export const save = async (record: DailyRecord): Promise<void> => {
  * ```
  */
 export const updatePartial = async (date: string, partialData: Record<string, any>): Promise<void> => {
+    console.log('[Repository] updatePartial called:', date, Object.keys(partialData));
+
     // 1. Update local storage (Merge with dot notation support)
     if (demoModeActive) {
         const current = getDemoRecordForDate(date);
@@ -188,9 +190,10 @@ export const updatePartial = async (date: string, partialData: Record<string, an
         }
     }
 
-    // 2. Update Firestore
-    if (firestoreEnabled && !demoModeActive) {
+    // 2. Update Firestore (always update since auth is verified by caller)
+    if (!demoModeActive) {
         try {
+            console.log('[Repository] Sending partial update to Firestore:', date);
             await updateRecordPartial(date, partialData);
         } catch (err) {
             console.warn('Firestore partial update failed:', err);
