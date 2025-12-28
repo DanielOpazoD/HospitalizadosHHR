@@ -78,6 +78,7 @@ export const PatientInputCells: React.FC<PatientInputCellsProps> = ({
                 documentType={data.documentType || 'RUT'}
                 isSubRow={isSubRow}
                 isEmpty={isEmpty}
+                hasName={!!data.patientName && !isEmpty}
                 onChange={handleDebouncedText('rut')}
                 onToggleType={onChange.toggleDocType}
                 readOnly={readOnly}

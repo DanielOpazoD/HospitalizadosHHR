@@ -2,6 +2,7 @@ import React from 'react';
 import { X, Calendar, Clock } from 'lucide-react';
 import { DeviceInfo } from '../../types';
 import { VVP_DEVICE_KEYS } from '../../constants';
+import { BaseModal } from '../shared/BaseModal';
 
 // Devices that require date tracking (IAAS surveillance)
 export const TRACKED_DEVICES = ['CUP', 'CVC', 'VMI', ...VVP_DEVICE_KEYS] as const;
@@ -56,85 +57,81 @@ export const DeviceDateConfigModal: React.FC<DeviceDateConfigModalProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4 backdrop-blur-sm">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-xs animate-scale-in">
-                <div className="flex justify-between items-center p-4 border-b border-slate-100 bg-slate-50 rounded-t-lg">
-                    <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                        <Calendar size={16} className="text-medical-600" />
-                        {device} - {DEVICE_LABELS[device]}
-                    </h3>
-                    <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
-                        <X size={18} />
-                    </button>
+        <BaseModal
+            isOpen={true}
+            onClose={onClose}
+            title={`${device} - ${DEVICE_LABELS[device]}`}
+            icon={<Calendar size={18} />}
+            size="sm"
+            variant="white"
+            headerIconColor="text-medical-600"
+        >
+            <div className="space-y-4">
+                <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5 tracking-wider">
+                        {device === 'VMI' ? 'Fecha de Inicio' : 'Fecha de Instalación'}
+                    </label>
+                    <input
+                        type="date"
+                        className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-medical-500 focus:outline-none transition-all shadow-sm"
+                        value={tempDetails.installationDate || ''}
+                        max={currentDate}
+                        onChange={(e) => setTempDetails({ ...tempDetails, installationDate: e.target.value })}
+                    />
                 </div>
 
-                <div className="p-4 space-y-4">
-                    <div>
-                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">
-                            {device === 'VMI' ? 'Fecha de Inicio' : 'Fecha de Instalación'}
-                        </label>
-                        <input
-                            type="date"
-                            className="w-full p-2 border border-slate-300 rounded text-sm focus:ring-2 focus:ring-medical-500 focus:outline-none"
-                            value={tempDetails.installationDate || ''}
-                            max={currentDate}
-                            onChange={(e) => setTempDetails({ ...tempDetails, installationDate: e.target.value })}
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">
-                            {device === 'VMI' ? 'Fecha de Término' : 'Fecha de Retiro'}
-                            <span className="font-normal text-slate-400 ml-1">(opcional)</span>
-                        </label>
-                        <input
-                            type="date"
-                            className="w-full p-2 border border-slate-300 rounded text-sm focus:ring-2 focus:ring-medical-500 focus:outline-none"
-                            value={tempDetails.removalDate || ''}
-                            min={tempDetails.installationDate}
-                            max={currentDate}
-                            onChange={(e) => setTempDetails({ ...tempDetails, removalDate: e.target.value })}
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">
-                            Nota <span className="font-normal text-slate-400">(opcional)</span>
-                        </label>
-                        <textarea
-                            className="w-full p-2 border border-slate-300 rounded text-sm focus:ring-2 focus:ring-medical-500 focus:outline-none resize-none min-h-[70px]"
-                            value={tempDetails.note || ''}
-                            onChange={(e) => setTempDetails({ ...tempDetails, note: e.target.value })}
-                            placeholder="Registrar detalles relevantes del dispositivo"
-                        />
-                    </div>
-
-                    {/* Days counter */}
-                    {tempDetails.installationDate && (
-                        <div className="flex items-center gap-2 p-2 bg-slate-50 rounded border border-slate-100">
-                            <Clock size={14} className="text-slate-500" />
-                            <span className="text-sm text-slate-600">
-                                Días con dispositivo: <strong>{calculateDeviceDays(tempDetails.installationDate, currentDate)}</strong>
-                            </span>
-                        </div>
-                    )}
+                <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5 tracking-wider">
+                        {device === 'VMI' ? 'Fecha de Término' : 'Fecha de Retiro'}
+                        <span className="font-normal text-slate-400 ml-1">(opcional)</span>
+                    </label>
+                    <input
+                        type="date"
+                        className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-medical-500 focus:outline-none transition-all shadow-sm"
+                        value={tempDetails.removalDate || ''}
+                        min={tempDetails.installationDate}
+                        max={currentDate}
+                        onChange={(e) => setTempDetails({ ...tempDetails, removalDate: e.target.value })}
+                    />
                 </div>
 
-                <div className="p-4 border-t border-slate-100 flex justify-end gap-2 bg-slate-50 rounded-b-lg">
+                <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5 tracking-wider">
+                        Nota <span className="font-normal text-slate-400">(opcional)</span>
+                    </label>
+                    <textarea
+                        className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-medical-500 focus:outline-none resize-none min-h-[70px] transition-all shadow-sm"
+                        value={tempDetails.note || ''}
+                        onChange={(e) => setTempDetails({ ...tempDetails, note: e.target.value })}
+                        placeholder="Registrar detalles relevantes..."
+                    />
+                </div>
+
+                {/* Days counter */}
+                {tempDetails.installationDate && (
+                    <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100 mt-2">
+                        <Clock size={16} className="text-medical-600" />
+                        <span className="text-sm text-slate-600 font-medium">
+                            Días con dispositivo: <span className="text-medical-700 font-bold">{calculateDeviceDays(tempDetails.installationDate, currentDate)}</span>
+                        </span>
+                    </div>
+                )}
+
+                <div className="flex justify-end gap-2 pt-4">
                     <button
                         onClick={onClose}
-                        className="px-3 py-1.5 text-slate-500 hover:bg-slate-200 rounded text-sm transition-colors"
+                        className="px-4 py-2 text-slate-500 hover:bg-slate-100 rounded-xl text-sm font-medium transition-colors"
                     >
                         Cancelar
                     </button>
                     <button
                         onClick={handleSave}
-                        className="px-3 py-1.5 bg-medical-600 text-white rounded text-sm font-medium hover:bg-medical-700 transition-colors shadow-sm"
+                        className="px-6 py-2 bg-medical-600 text-white rounded-xl text-sm font-bold hover:bg-medical-700 transition-all shadow-lg shadow-medical-600/20 active:scale-95"
                     >
                         Guardar
                     </button>
                 </div>
             </div>
-        </div>
+        </BaseModal>
     );
 };

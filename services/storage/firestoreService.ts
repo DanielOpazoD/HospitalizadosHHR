@@ -314,12 +314,17 @@ export const saveNurseCatalogToFirestore = async (nurses: string[]): Promise<voi
  */
 export const subscribeToNurseCatalog = (callback: (nurses: string[]) => void): (() => void) => {
     const docRef = doc(db, COLLECTIONS.HOSPITALS, HOSPITAL_ID, HOSPITAL_COLLECTIONS.SETTINGS, SETTINGS_DOCS.NURSES);
+    console.log('[Firestore] Setting up nurse catalog subscription...');
 
     return onSnapshot(docRef, (docSnap) => {
+        console.log('[Firestore] Nurse catalog snapshot received, exists:', docSnap.exists());
         if (docSnap.exists()) {
             const data = docSnap.data();
-            callback((data.list as string[]) || []);
+            const nurses = (data.list as string[]) || [];
+            console.log('[Firestore] Nurse catalog data:', nurses);
+            callback(nurses);
         } else {
+            console.log('[Firestore] Nurse catalog document does not exist');
             callback([]);
         }
     }, (error) => {
@@ -376,12 +381,17 @@ export const saveTensCatalogToFirestore = async (tens: string[]): Promise<void> 
  */
 export const subscribeToTensCatalog = (callback: (tens: string[]) => void): (() => void) => {
     const docRef = doc(db, COLLECTIONS.HOSPITALS, HOSPITAL_ID, HOSPITAL_COLLECTIONS.SETTINGS, SETTINGS_DOCS.TENS);
+    console.log('[Firestore] Setting up TENS catalog subscription...');
 
     return onSnapshot(docRef, (docSnap) => {
+        console.log('[Firestore] TENS catalog snapshot received, exists:', docSnap.exists());
         if (docSnap.exists()) {
             const data = docSnap.data();
-            callback((data.list as string[]) || []);
+            const tens = (data.list as string[]) || [];
+            console.log('[Firestore] TENS catalog data:', tens);
+            callback(tens);
         } else {
+            console.log('[Firestore] TENS catalog document does not exist');
             callback([]);
         }
     }, (error) => {

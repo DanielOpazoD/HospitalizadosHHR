@@ -48,29 +48,67 @@ export const StaffProvider: React.FC<StaffProviderProps> = ({ children }) => {
     const [showTensManager, setShowTensManager] = useState(false);
 
     // Subscribe to nurses catalog (unified through CatalogRepository)
+    // Wait for Firebase auth to be ready before subscribing
     useEffect(() => {
         // Load from localStorage initially (fast)
         setNursesList(CatalogRepository.getNurses());
 
-        // Subscribe for real-time updates
-        const unsubscribe = CatalogRepository.subscribeNurses((nurses) => {
-            setNursesList(nurses);
+        let unsubscribeCatalog: (() => void) | null = null;
+
+        // Import auth dynamically to avoid circular dependencies
+        import('../firebaseConfig').then(({ auth }) => {
+            const unsubscribeAuth = auth.onAuthStateChanged((user) => {
+                if (user) {
+                    // User is authenticated, subscribe to Firestore
+                    console.log('[StaffContext] Auth ready, subscribing to nurse catalog');
+                    unsubscribeCatalog = CatalogRepository.subscribeNurses((nurses) => {
+                        setNursesList(nurses);
+                    });
+                }
+            });
+
+            // Store auth unsubscribe for cleanup
+            return () => {
+                unsubscribeAuth();
+                if (unsubscribeCatalog) unsubscribeCatalog();
+            };
         });
 
-        return () => unsubscribe();
+        return () => {
+            if (unsubscribeCatalog) unsubscribeCatalog();
+        };
     }, []);
 
     // Subscribe to TENS catalog (unified through CatalogRepository)
+    // Wait for Firebase auth to be ready before subscribing
     useEffect(() => {
         // Load from localStorage initially (fast)
         setTensList(CatalogRepository.getTens());
 
-        // Subscribe for real-time updates
-        const unsubscribe = CatalogRepository.subscribeTens((tens) => {
-            setTensList(tens);
+        let unsubscribeCatalog: (() => void) | null = null;
+
+        // Import auth dynamically to avoid circular dependencies
+        import('../firebaseConfig').then(({ auth }) => {
+            const unsubscribeAuth = auth.onAuthStateChanged((user) => {
+                if (user) {
+                    // User is authenticated, subscribe to Firestore
+                    console.log('[StaffContext] Auth ready, subscribing to TENS catalog');
+                    unsubscribeCatalog = CatalogRepository.subscribeTens((tens) => {
+                        setTensList(tens);
+                    });
+                }
+            });
+
+            // Store auth unsubscribe for cleanup
+            return () => {
+                unsubscribeAuth();
+                if (unsubscribeCatalog) unsubscribeCatalog();
+            };
         });
 
-        return () => unsubscribe();
+        return () => {
+            if (unsubscribeCatalog) unsubscribeCatalog();
+        };
     }, []);
 
 

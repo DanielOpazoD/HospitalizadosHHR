@@ -7,6 +7,7 @@ interface RutPassportInputProps {
     documentType: string;
     isSubRow?: boolean;
     isEmpty?: boolean;
+    hasName?: boolean;
     onChange: (value: string) => void;
     onToggleType?: () => void;
     readOnly?: boolean;
@@ -18,6 +19,7 @@ export const RutPassportInput: React.FC<RutPassportInputProps> = ({
     documentType,
     isSubRow = false,
     isEmpty = false,
+    hasName = false,
     onChange,
     onToggleType,
     readOnly = false,
@@ -45,26 +47,10 @@ export const RutPassportInput: React.FC<RutPassportInputProps> = ({
                             : (hasError ? "border-red-400 bg-red-50/50" : "border-slate-300"),
                         hasError ? "focus:ring-red-200 focus:border-red-500" : "focus:ring-medical-500 focus:border-medical-500"
                     )}
-                    placeholder={documentType === 'Pasaporte' ? 'N° Pasaporte' : '12.345.678-9'}
+                    placeholder={documentType === 'Pasaporte' ? 'N° Pasaporte' : (hasName ? '' : '12.345.678-9')}
                     value={value || ''}
                     disabled={readOnly}
                     onChange={(val) => {
-                        // Auto-detect passport: if starts with letter or has no dots/dash pattern
-                        const looksLikePassport = val.length > 0 && (
-                            /^[A-Za-z]/.test(val) || // Starts with letter
-                            (val.length > 4 && !/^\d{1,2}\.?\d{3}\.?\d{3}-?[\dkK]?$/.test(val.replace(/\s/g, '')))
-                        );
-
-                        // Update document type if needed (only if onToggleType available)
-                        if (!isSubRow && onToggleType) {
-                            if (looksLikePassport && documentType !== 'Pasaporte') {
-                                onToggleType(); // Switch to passport
-                            } else if (!looksLikePassport && val.length > 0 && documentType === 'Pasaporte' && /^\d/.test(val)) {
-                                // If typing numbers and currently in passport mode, switch back to RUT
-                                onToggleType();
-                            }
-                        }
-
                         onChange(val);
                     }}
                 />

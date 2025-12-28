@@ -1,6 +1,6 @@
 import { initializeApp, type FirebaseOptions, type FirebaseApp } from 'firebase/app';
 import { getAuth, connectAuthEmulator, type Auth } from 'firebase/auth';
-import { initializeFirestore, connectFirestoreEmulator, enableIndexedDbPersistence, type Firestore } from 'firebase/firestore';
+import { initializeFirestore, connectFirestoreEmulator, enableMultiTabIndexedDbPersistence, type Firestore } from 'firebase/firestore';
 
 const decodeBase64 = (rawValue: string) => {
     const value = rawValue?.trim();
@@ -106,7 +106,7 @@ export const firebaseReady = (async () => {
     auth = getAuth(app);
     db = initializeFirestore(app, { ignoreUndefinedProperties: true });
 
-    enableIndexedDbPersistence(db).catch((err) => {
+    enableMultiTabIndexedDbPersistence(db).catch((err) => {
         if ((err as any).code === 'failed-precondition') {
             console.warn('Firestore persistence failed: Multiple tabs open');
         } else if ((err as any).code === 'unimplemented') {

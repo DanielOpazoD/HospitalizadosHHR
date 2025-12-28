@@ -90,35 +90,15 @@ export const useDailyRecordSync = (currentDateString: string, isOfflineMode: boo
                         const now = Date.now();
                         const timeSinceLastChange = now - lastLocalChangeRef.current;
 
-                        // Only ignore updates if we JUST saved (within 300ms) - very short window to catch echoes
-                        if (isSavingRef.current && timeSinceLastChange < 300) {
+                        // Only ignore updates if we are in the middle of saving (very short window)
+                        if (isSavingRef.current && timeSinceLastChange < 200) {
+                            console.log('[Sync] Ignoring echo during save operation');
                             return;
                         }
 
-                        setRecord(prev => {
-                            if (!prev) return remoteRecord;
-
-                            const localTime = prev.lastUpdated ? new Date(prev.lastUpdated).getTime() : 0;
-                            const remoteTime = remoteRecord.lastUpdated ? new Date(remoteRecord.lastUpdated).getTime() : 0;
-
-                            // Accept remote if it's newer (even by a small margin)
-                            if (remoteTime > localTime + 100) {
-                                return remoteRecord;
-                            }
-
-                            // If we just made a local change, keep local
-                            if (timeSinceLastChange < 300) {
-                                return prev;
-                            }
-
-                            // Accept remote if no recent local changes
-                            if (timeSinceLastChange > 1000) {
-                                return remoteRecord;
-                            }
-
-                            return prev;
-                        });
-
+                        // Always accept remote updates - they are the source of truth
+                        console.log('[Sync] Accepting remote update');
+                        setRecord(remoteRecord);
                         setLastSyncTime(new Date());
                         setSyncStatus('saved');
                         saveRecordLocal(remoteRecord);
@@ -228,6 +208,7 @@ export const useDailyRecordSync = (currentDateString: string, isOfflineMode: boo
      */
     const patchRecord = useCallback(async (partial: DailyRecordPatchLoose) => {
         isSavingRef.current = true;
+        lastLocalChangeRef.current = Date.now();
 
         // Optimistic update
         setRecord(prev => {

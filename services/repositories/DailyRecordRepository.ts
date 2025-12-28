@@ -456,10 +456,18 @@ export const saveNurses = async (nurses: string[]): Promise<void> => {
  * @returns Unsubscribe function
  */
 export const subscribeNurses = (callback: (nurses: string[]) => void): (() => void) => {
-    if (demoModeActive || !firestoreEnabled) {
+    // Demo mode check (but don't check firestoreEnabled since auth is verified by caller)
+    if (demoModeActive) {
+        console.log('[CatalogRepository] subscribeNurses: No-op (demo mode)');
         return () => { };
     }
-    return subscribeToNurseCatalog(callback);
+    console.log('[CatalogRepository] subscribeNurses: Setting up Firestore subscription');
+    return subscribeToNurseCatalog((nurses) => {
+        console.log('[CatalogRepository] Received nurse catalog from Firestore:', nurses.length, 'items');
+        // Mirror to localStorage for persistence
+        saveStoredNurses(nurses);
+        callback(nurses);
+    });
 };
 
 /**
@@ -500,10 +508,18 @@ export const saveTens = async (tens: string[]): Promise<void> => {
  * @returns Unsubscribe function
  */
 export const subscribeTens = (callback: (tens: string[]) => void): (() => void) => {
-    if (demoModeActive || !firestoreEnabled) {
+    // Demo mode check (but don't check firestoreEnabled since auth is verified by caller)
+    if (demoModeActive) {
+        console.log('[CatalogRepository] subscribeTens: No-op (demo mode)');
         return () => { };
     }
-    return subscribeToTensCatalog(callback);
+    console.log('[CatalogRepository] subscribeTens: Setting up Firestore subscription');
+    return subscribeToTensCatalog((tens) => {
+        console.log('[CatalogRepository] Received TENS catalog from Firestore:', tens.length, 'items');
+        // Mirror to localStorage for persistence
+        localStorage.setItem(TENS_STORAGE_KEY, JSON.stringify(tens));
+        callback(tens);
+    });
 };
 
 // ============================================================================

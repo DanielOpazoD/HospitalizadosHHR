@@ -2,6 +2,7 @@ import React from 'react';
 import clsx from 'clsx';
 import { calculateDeviceDays, TRACKED_DEVICES, TrackedDevice } from './DeviceDateConfigModal';
 import { DeviceDetails } from '../../types';
+import { formatDateDDMMYYYY } from '../../services/dataService';
 
 interface DeviceBadgeProps {
     device: string;
@@ -46,7 +47,7 @@ export const DeviceBadge: React.FC<DeviceBadgeProps> = ({
 
             {isTracked && details?.installationDate && (
                 <span className="invisible group-hover:visible absolute left-1/2 -translate-x-1/2 top-full mt-1 bg-slate-900 text-white text-[10px] px-2 py-1 rounded shadow-lg whitespace-nowrap z-20 pointer-events-none">
-                    FI: {new Date(details.installationDate).toLocaleDateString('es-CL')}
+                    FI: {formatDateDDMMYYYY(details.installationDate)}
                 </span>
             )}
         </span>
