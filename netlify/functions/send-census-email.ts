@@ -67,9 +67,24 @@ export const handler = async (event: any) => {
 
         console.log(`[CensusEmail] Numeric PIN for ${date}: ${password}`);
 
-        // The PIN is already included in the email body by buildCensusEmailBody
-        // No need to append it again here
-        const finalBody = body || '';
+        // Ensure the PIN is included in the email body in the correct position
+        let finalBody = body || '';
+        if (password && !finalBody.includes(password)) {
+            const pinLine = `\nClave Excel: ${password}\n`;
+
+            // Try to insert before "Saludos cordiales,"
+            if (finalBody.includes('Saludos cordiales,')) {
+                finalBody = finalBody.replace('Saludos cordiales,', `${pinLine}\nSaludos cordiales,`);
+            }
+            // Fallback: insert before the signature separator
+            else if (finalBody.includes('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')) {
+                finalBody = finalBody.replace('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', `${pinLine}\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+            }
+            // Absolute fallback: append at the end
+            else {
+                finalBody = finalBody ? `${finalBody}\n${pinLine}` : pinLine;
+            }
+        }
 
         // eslint-disable-next-line @typescript-eslint/no-var-requires
         const XlsxPopulate = require('xlsx-populate');
