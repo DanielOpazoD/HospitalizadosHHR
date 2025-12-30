@@ -20,7 +20,7 @@ declare const self: ServiceWorkerGlobalScope & { __WB_MANIFEST: any };
 precacheAndRoute(self.__WB_MANIFEST);
 cleanupOutdatedCaches();
 
-const CACHE_VERSION = 'v2.1.0';
+const CACHE_VERSION = 'v2.2.0';
 const OFFLINE_PAGE = '/offline.html';
 
 // ============================================
