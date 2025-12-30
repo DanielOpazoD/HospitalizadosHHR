@@ -114,6 +114,7 @@ export const BaseModal: React.FC<BaseModalProps> = ({
     return (
         <div
             className="fixed inset-0 bg-slate-900/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in print:hidden"
+            style={{ isolation: 'isolate', willChange: 'opacity' }}
             onClick={handleBackdropClick}
             role="dialog"
             aria-modal="true"

@@ -112,7 +112,10 @@ export const DateStrip: React.FC<DateStripProps> = ({
     }, [daysInMonth, setSelectedDay]);
 
     return (
-        <div className="bg-white border-b border-slate-200 shadow-sm sticky top-[60px] z-40 print:hidden">
+        <div
+            className="bg-white border-b border-slate-200 shadow-sm sticky top-[60px] z-40 print:hidden"
+            style={{ transform: 'translateZ(0)' }}
+        >
             <div className="max-w-screen-2xl mx-auto px-4 py-1.5">
                 <div className="flex items-center gap-3">
 
