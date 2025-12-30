@@ -45,7 +45,7 @@ export default defineConfig(({ mode }) => {
           ]
         },
         devOptions: {
-          enabled: false // Disable in dev to avoid caching headaches
+          enabled: true // Enable in dev to test PWA install
         }
       }),
       // Gzip compression for production builds
