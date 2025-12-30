@@ -9,7 +9,7 @@
  * - DeviceDateConfigModal: Modal for device date configuration
  */
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { Plus } from 'lucide-react';
 import { VVP_DEVICE_KEYS } from '../constants';
 import { DeviceDetails, DeviceInfo } from '../types';
@@ -81,19 +81,35 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
 
     // ========================================================================
     // Normalize legacy VVP representations
+    // Instead of using useEffect to modify parent state, we normalize in render
+    // and use the normalized value for all internal operations.
     // ========================================================================
+    const normalizedDevices = useMemo(() => normalizeDevices(devices), [devices]);
+
+    // Notify parent of normalization only once when devices change and need normalization
+    const prevDevicesRef = useRef<string[]>(devices);
     useEffect(() => {
         const normalized = normalizeDevices(devices);
-        if (!areArraysEqual(devices, normalized)) {
-            onChangeRef.current(normalized);
+        const needsNormalization = !areArraysEqual(devices, normalized);
+        const isFirstRender = prevDevicesRef.current === devices;
+
+        // Only call onChange if normalization is needed and this isn't a re-render
+        // with the same devices prop
+        if (needsNormalization && !areArraysEqual(prevDevicesRef.current, devices)) {
+            // Use setTimeout to avoid calling onChange during render
+            const timer = setTimeout(() => {
+                onChangeRef.current(normalized);
+            }, 0);
+            return () => clearTimeout(timer);
         }
-    }, [devices]); // Removed onChangeRef from dependencies as it's a ref
+        prevDevicesRef.current = devices;
+    }, [devices]);
 
     // ========================================================================
     // VVP State
     // ========================================================================
-    const vvpCount = VVP_DEVICE_KEYS.filter(key => devices.includes(key)).length;
-    const vvpDevices = VVP_DEVICE_KEYS.filter(key => devices.includes(key));
+    const vvpCount = VVP_DEVICE_KEYS.filter(key => normalizedDevices.includes(key)).length;
+    const vvpDevices = VVP_DEVICE_KEYS.filter(key => normalizedDevices.includes(key));
 
     // ========================================================================
     // Event Handlers
@@ -101,9 +117,10 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
 
     const setVVPCount = useCallback((count: number) => {
         const clampedCount = Math.max(0, Math.min(3, count));
-        const newDevices = devices.filter(d => !isAnyVvp(d));
+        const newDevices = normalizedDevices.filter(d => !isAnyVvp(d));
         const vvpsToAdd = VVP_DEVICE_KEYS.slice(0, clampedCount);
         onChange([...newDevices, ...vvpsToAdd]);
+
 
         if (onDetailsChange) {
             const updatedDetails = { ...deviceDetails };
@@ -112,11 +129,11 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
             });
             onDetailsChange(updatedDetails);
         }
-    }, [devices, deviceDetails, onChange, onDetailsChange]);
+    }, [normalizedDevices, deviceDetails, onChange, onDetailsChange]);
 
     const toggleDevice = useCallback((device: string) => {
-        if (devices.includes(device)) {
-            onChange(devices.filter(d => d !== device));
+        if (normalizedDevices.includes(device)) {
+            onChange(normalizedDevices.filter(d => d !== device));
             // Clear details if tracked device is removed
             if (TRACKED_DEVICES.includes(device as TrackedDevice) && onDetailsChange) {
                 const newDetails = { ...deviceDetails };
@@ -124,19 +141,19 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
                 onDetailsChange(newDetails);
             }
         } else {
-            onChange([...devices, device]);
+            onChange([...normalizedDevices, device]);
         }
-    }, [devices, deviceDetails, onChange, onDetailsChange]);
+    }, [normalizedDevices, deviceDetails, onChange, onDetailsChange]);
 
     const addCustomDevice = useCallback((device: string) => {
-        if (!devices.includes(device)) {
-            onChange([...devices, device]);
+        if (!normalizedDevices.includes(device)) {
+            onChange([...normalizedDevices, device]);
         }
-    }, [devices, onChange]);
+    }, [normalizedDevices, onChange]);
 
     const removeDevice = useCallback((device: string) => {
-        onChange(devices.filter(d => d !== device));
-    }, [devices, onChange]);
+        onChange(normalizedDevices.filter(d => d !== device));
+    }, [normalizedDevices, onChange]);
 
     const handleDeviceConfigSave = useCallback((info: DeviceInfo) => {
         if (editingDevice && onDetailsChangeRef.current) {
