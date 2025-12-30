@@ -2,6 +2,8 @@ import { initializeApp, type FirebaseOptions, type FirebaseApp } from 'firebase/
 import { getAuth, connectAuthEmulator, setPersistence, browserLocalPersistence, type Auth } from 'firebase/auth';
 import { initializeFirestore, connectFirestoreEmulator, enableMultiTabIndexedDbPersistence, type Firestore } from 'firebase/firestore';
 
+const CACHED_CONFIG_KEY = 'hhr_firebase_config';
+
 const decodeBase64 = (rawValue: string) => {
     const value = rawValue?.trim();
     if (!value) return '';
@@ -47,6 +49,28 @@ const mountConfigWarning = (message: string) => {
     `;
 };
 
+const saveCachedConfig = (config: FirebaseOptions) => {
+    try {
+        if (typeof localStorage === 'undefined') return;
+        localStorage.setItem(CACHED_CONFIG_KEY, JSON.stringify(config));
+    } catch (error) {
+        console.warn('[FirebaseConfig] Failed to cache Firebase config:', error);
+    }
+};
+
+const getCachedConfig = (): FirebaseOptions | null => {
+    try {
+        if (typeof localStorage === 'undefined') return null;
+        const raw = localStorage.getItem(CACHED_CONFIG_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw) as FirebaseOptions;
+        return parsed.apiKey ? parsed : null;
+    } catch (error) {
+        console.warn('[FirebaseConfig] Failed to read cached Firebase config:', error);
+        return null;
+    }
+};
+
 const fetchRuntimeConfig = async (): Promise<FirebaseOptions> => {
     try {
         const configUrl = `/.netlify/functions/firebase-config?t=${Date.now()}&mode=recovery`;
@@ -61,8 +85,6 @@ const fetchRuntimeConfig = async (): Promise<FirebaseOptions> => {
         const config = await response.json();
         return config satisfies FirebaseOptions;
     } catch (error) {
-        console.error('Failed to load Firebase config from Netlify function', error);
-        mountConfigWarning('No se pudo cargar la configuración de Firebase desde Netlify. Verifica las variables en el panel de Netlify.');
         throw error;
     }
 };
@@ -82,12 +104,27 @@ const buildDevConfig = (): FirebaseOptions => {
     } satisfies FirebaseOptions;
 };
 
-const loadFirebaseConfig = () => {
+const loadFirebaseConfig = async () => {
     if (import.meta.env.DEV) {
-        return Promise.resolve(buildDevConfig());
+        return buildDevConfig();
     }
 
-    return fetchRuntimeConfig();
+    const cached = getCachedConfig();
+
+    try {
+        const config = await fetchRuntimeConfig();
+        saveCachedConfig(config);
+        return config;
+    } catch (error) {
+        if (cached?.apiKey) {
+            console.warn('[FirebaseConfig] Using cached Firebase config due to network error');
+            return cached;
+        }
+
+        console.error('Failed to load Firebase config from Netlify function', error);
+        mountConfigWarning('No se pudo cargar la configuración de Firebase desde Netlify. Verifica las variables en el panel de Netlify.');
+        throw error;
+    }
 };
 
 let app!: FirebaseApp;
