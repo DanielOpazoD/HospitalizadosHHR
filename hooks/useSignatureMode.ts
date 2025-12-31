@@ -3,8 +3,9 @@
  * Handles URL-based signature mode for medical handoffs
  */
 import { useEffect, useMemo, useRef } from 'react';
-import { signInAnonymously, User } from 'firebase/auth';
+import { signInAnonymously } from 'firebase/auth';
 import { auth } from '../firebaseConfig';
+import { AuthUser } from '../services/auth/authService';
 
 interface SignatureModeResult {
     isSignatureMode: boolean;
@@ -14,7 +15,7 @@ interface SignatureModeResult {
 
 export function useSignatureMode(
     navDateString: string,
-    user: User | null,
+    user: AuthUser | null,
     authLoading: boolean
 ): SignatureModeResult {
     // Parse URL params

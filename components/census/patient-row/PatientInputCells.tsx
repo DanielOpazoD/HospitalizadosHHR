@@ -58,14 +58,14 @@ export const PatientInputCells: React.FC<PatientInputCellsProps> = ({
     return (
         <>
             {/* Name */}
-            <td className="p-1 border-r border-slate-200 w-[110px]">
+            <td className="py-0.5 px-1 border-r border-slate-200 w-[110px]">
                 <div className="relative">
                     {isSubRow && <div className="absolute left-[-15px] top-2 text-slate-300"><ArrowRight size={14} /></div>}
                     <DebouncedInput
                         type="text"
                         className={clsx(
-                            "w-full p-0.5 h-9 border rounded transition-all duration-200 focus:ring-2 focus:ring-medical-500/20 focus:border-medical-500 focus:outline-none text-[13px] font-medium",
-                            isSubRow ? "border-pink-100 bg-white text-xs h-8" : "border-slate-200 bg-white",
+                            "w-full p-0.5 h-7  border rounded transition-all duration-200 focus:ring-2 focus:ring-medical-500/20 focus:border-medical-500 focus:outline-none text-[13px] font-medium",
+                            isSubRow ? "border-pink-100 bg-white text-xs h-6" : "border-slate-200 bg-white",
                             !PatientInputSchema.pick({ patientName: true }).safeParse({ patientName: data.patientName }).success && data.patientName && "border-red-400 focus:border-red-500 focus:ring-red-100"
                         )}
                         placeholder={isSubRow ? "Nombre RN / Niño" : (isEmpty ? "" : "Nombre Paciente")}
@@ -91,15 +91,15 @@ export const PatientInputCells: React.FC<PatientInputCellsProps> = ({
             />
 
             {/* AGE */}
-            <td className="p-1 border-r border-slate-200 w-14 relative">
+            <td className="py-0.5 px-1 border-r border-slate-200 w-14 relative">
                 {isEmpty && !isSubRow ? (
-                    <div className="w-full p-1 border border-slate-200 rounded bg-slate-100 text-slate-400 text-xs italic text-center">-</div>
+                    <div className="w-full py-0.5 px-1 border border-slate-200 rounded bg-slate-100 text-slate-400 text-xs italic text-center">-</div>
                 ) : (
                     <input
                         type="text"
                         className={clsx(
-                            "w-full h-9 px-1 border border-slate-200 bg-slate-50 text-slate-600 rounded text-center cursor-pointer font-bold text-xs transition-all",
-                            isSubRow && "h-8",
+                            "w-full h-7 px-1 border border-slate-200 bg-slate-50 text-slate-600 rounded text-center cursor-pointer font-bold text-xs transition-all",
+                            isSubRow && "h-6",
                             !PatientInputSchema.pick({ age: true }).safeParse({ age: data.age }).success && data.age && "border-red-400 bg-red-50 text-red-700"
                         )}
                         placeholder="Edad"
@@ -111,18 +111,18 @@ export const PatientInputCells: React.FC<PatientInputCellsProps> = ({
             </td>
 
             {/* DIAGNOSTICO */}
-            <td className="p-1 border-r border-slate-200 w-[140px]">
+            <td className="py-0.5 px-1 border-r border-slate-200 w-[140px]">
                 {isEmpty && !isSubRow ? (
-                    <div className="w-full p-1 border border-slate-200 rounded bg-slate-100 text-slate-400 text-xs italic text-center">-</div>
+                    <div className="w-full py-0.5 px-1 border border-slate-200 rounded bg-slate-100 text-slate-400 text-xs italic text-center">-</div>
                 ) : (
                     <DebouncedInput
                         type="text"
                         className={clsx(
-                            "w-full p-0.5 h-9 border rounded transition-all duration-200 focus:ring-2 focus:outline-none text-[13px]",
+                            "w-full p-0.5 h-7  border rounded transition-all duration-200 focus:ring-2 focus:outline-none text-[13px]",
                             !PatientInputSchema.pick({ pathology: true }).safeParse({ pathology: data.pathology }).success && data.pathology
                                 ? "border-red-400 focus:ring-red-200 focus:border-red-500"
                                 : "border-slate-200 focus:ring-medical-500/20 focus:border-medical-500",
-                            isSubRow && "text-xs h-8"
+                            isSubRow && "text-xs h-6"
                         )}
                         placeholder="Diagnóstico"
                         value={data.pathology || ''}
@@ -133,14 +133,14 @@ export const PatientInputCells: React.FC<PatientInputCellsProps> = ({
             </td>
 
             {/* Specialty */}
-            <td className="p-1 border-r border-slate-200 w-28">
+            <td className="py-0.5 px-1 border-r border-slate-200 w-28">
                 {isEmpty && !isSubRow ? (
-                    <div className="w-full p-1 border border-slate-200 rounded bg-slate-100 text-slate-400 text-xs italic text-center">-</div>
+                    <div className="w-full py-0.5 px-1 border border-slate-200 rounded bg-slate-100 text-slate-400 text-xs italic text-center">-</div>
                 ) : (
                     <select
                         className={clsx(
-                            "w-full p-0.5 h-9 border border-slate-200 rounded transition-all duration-200 focus:ring-2 focus:ring-medical-500/20 focus:border-medical-500 focus:outline-none text-xs bg-white cursor-pointer",
-                            isSubRow && "h-8"
+                            "w-full p-0.5 h-7  border border-slate-200 rounded transition-all duration-200 focus:ring-2 focus:ring-medical-500/20 focus:border-medical-500 focus:outline-none text-xs bg-white cursor-pointer",
+                            isSubRow && "h-6"
                         )}
                         value={data.specialty || ''}
                         onChange={handleText('specialty')}
@@ -155,17 +155,17 @@ export const PatientInputCells: React.FC<PatientInputCellsProps> = ({
             </td>
 
             {/* Status */}
-            <td className="p-1 border-r border-slate-200 w-24">
+            <td className="py-0.5 px-1 border-r border-slate-200 w-24">
                 {isEmpty && !isSubRow ? (
-                    <div className="w-full p-1 border border-slate-200 rounded bg-slate-100 text-slate-400 text-xs italic text-center">-</div>
+                    <div className="w-full py-0.5 px-1 border border-slate-200 rounded bg-slate-100 text-slate-400 text-xs italic text-center">-</div>
                 ) : (
                     <select
                         className={clsx(
-                            "w-full p-0.5 h-9 border border-slate-200 rounded transition-all duration-200 focus:ring-2 focus:ring-medical-500/20 focus:border-medical-500 focus:outline-none text-xs font-bold uppercase tracking-tighter cursor-pointer",
+                            "w-full p-0.5 h-7  border border-slate-200 rounded transition-all duration-200 focus:ring-2 focus:ring-medical-500/20 focus:border-medical-500 focus:outline-none text-xs font-bold uppercase tracking-tighter cursor-pointer",
                             data.status === 'Grave' ? "text-red-600 bg-red-50/50" :
                                 data.status === 'De cuidado' ? "text-orange-600 bg-orange-50/50" :
                                     "text-emerald-700 bg-emerald-50/30",
-                            isSubRow && "h-8"
+                            isSubRow && "h-6"
                         )}
                         value={data.status || ''}
                         onChange={handleText('status')}
@@ -180,9 +180,9 @@ export const PatientInputCells: React.FC<PatientInputCellsProps> = ({
             </td>
 
             {/* Admission */}
-            <td className="p-1 border-r border-slate-200 w-28">
+            <td className="py-0.5 px-1 border-r border-slate-200 w-28">
                 {isEmpty && !isSubRow ? (
-                    <div className="w-full p-1 border border-slate-200 rounded bg-slate-100 text-slate-400 text-xs italic text-center">-</div>
+                    <div className="w-full py-0.5 px-1 border border-slate-200 rounded bg-slate-100 text-slate-400 text-xs italic text-center">-</div>
                 ) : (
                     <div
                         className="w-full relative"
@@ -197,8 +197,8 @@ export const PatientInputCells: React.FC<PatientInputCellsProps> = ({
                             type="date"
                             max={new Date().toISOString().split('T')[0]} // Impossible to have future admission
                             className={clsx(
-                                "w-full p-0.5 h-9 border border-slate-300 rounded focus:ring-2 focus:ring-medical-500 focus:outline-none text-xs",
-                                isSubRow && "h-8"
+                                "w-full p-0.5 h-7  border border-slate-300 rounded focus:ring-2 focus:ring-medical-500 focus:outline-none text-xs",
+                                isSubRow && "h-6"
                             )}
                             value={data.admissionDate || ''}
                             onChange={handleDebouncedText('admissionDate')}
@@ -209,7 +209,7 @@ export const PatientInputCells: React.FC<PatientInputCellsProps> = ({
                             <DebouncedInput
                                 type="time"
                                 step={300}
-                                className="w-24 p-0.5 h-8 border border-slate-300 rounded focus:ring-2 focus:ring-medical-500 focus:outline-none text-xs absolute left-full top-1/2 -translate-y-1/2 ml-2 bg-white shadow-lg z-30"
+                                className="w-24 p-0.5 h-7 border border-slate-300 rounded focus:ring-2 focus:ring-medical-500 focus:outline-none text-xs absolute left-full top-1/2 -translate-y-1/2 ml-2 bg-white shadow-lg z-30"
                                 value={data.admissionTime || ''}
                                 onChange={handleDebouncedText('admissionTime')}
                                 disabled={readOnly}
@@ -220,9 +220,9 @@ export const PatientInputCells: React.FC<PatientInputCellsProps> = ({
             </td>
 
             {/* Devices */}
-            <td className="p-1 border-r border-slate-200 w-32 relative">
+            <td className="py-0.5 px-1 border-r border-slate-200 w-32 relative">
                 {isEmpty && !isSubRow ? (
-                    <div className="w-full p-1 border border-slate-200 rounded bg-slate-100 text-slate-400 text-xs italic text-center">-</div>
+                    <div className="w-full py-0.5 px-1 border border-slate-200 rounded bg-slate-100 text-slate-400 text-xs italic text-center">-</div>
                 ) : (
                     <DeviceSelector
                         devices={memoizedDevices}
@@ -237,7 +237,7 @@ export const PatientInputCells: React.FC<PatientInputCellsProps> = ({
 
             <td className="p-0.5 border-r border-slate-200 text-center w-10">
                 {isEmpty && !isSubRow ? (
-                    <div className="w-full p-1 border border-slate-200 rounded bg-slate-100 text-slate-400 text-xs italic text-center">-</div>
+                    <div className="w-full py-0.5 px-1 border border-slate-200 rounded bg-slate-100 text-slate-400 text-xs italic text-center">-</div>
                 ) : (
                     <input type="checkbox" checked={data.surgicalComplication || false} onChange={handleCheck('surgicalComplication')} className="w-4 h-4 text-red-600 rounded" title="Comp. Qx" disabled={readOnly} />
                 )}
@@ -245,7 +245,7 @@ export const PatientInputCells: React.FC<PatientInputCellsProps> = ({
 
             <td className="p-0.5 text-center w-10">
                 {isEmpty && !isSubRow ? (
-                    <div className="w-full p-1 border border-slate-200 rounded bg-slate-100 text-slate-400 text-xs italic text-center">-</div>
+                    <div className="w-full py-0.5 px-1 border border-slate-200 rounded bg-slate-100 text-slate-400 text-xs italic text-center">-</div>
                 ) : (
                     <input type="checkbox" checked={data.isUPC || false} onChange={handleCheck('isUPC')} className="w-4 h-4 text-purple-600 rounded" title="UPC" disabled={readOnly} />
                 )}

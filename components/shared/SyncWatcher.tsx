@@ -7,13 +7,13 @@
 import React, { useEffect, useRef } from 'react';
 import { useNotification } from '../../context/UIContext';
 import { useDailyRecordContext } from '../../context/DailyRecordContext';
-import { useAuthState } from '../../hooks/useAuthState';
+import { useAuth } from '../../context/AuthContext';
 import { useDemoMode } from '../../context/DemoModeContext';
 
 export const SyncWatcher: React.FC = () => {
     const { syncStatus } = useDailyRecordContext();
     const { error, success, warning } = useNotification();
-    const { isFirebaseConnected } = useAuthState();
+    const { isFirebaseConnected } = useAuth();
     const { isActive: isDemoMode } = useDemoMode();
 
     // Track previous status to detect changes

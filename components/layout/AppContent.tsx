@@ -12,7 +12,7 @@ import { AppProviders } from '@/components/AppProviders';
 import { generateCensusMasterExcel } from '@/services';
 import { CensusEmailConfigModal } from '@/components/census/CensusEmailConfigModal';
 
-import { UseAuthStateReturn } from '@/hooks/useAuthState';
+import { useAuth } from '@/context/AuthContext';
 import { UseDateNavigationReturn } from '@/hooks/useDateNavigation';
 import { UseUIStateReturn } from '@/hooks/useUIState';
 import { DailyRecordContextType } from '@/hooks/useDailyRecord';
@@ -21,7 +21,6 @@ import { UseFileOperationsReturn } from '@/hooks/useFileOperations';
 import { UseNurseSignatureReturn } from '@/hooks/useNurseSignature';
 
 interface AppContentProps {
-    auth: UseAuthStateReturn;
     dateNav: UseDateNavigationReturn & {
         isSignatureMode: boolean;
         existingDaysInMonth: number[];
@@ -33,12 +32,7 @@ interface AppContentProps {
     nurseSignature: UseNurseSignatureReturn;
 }
 
-/**
- * Main application layout and routing orchestration.
- * Wraps everything in AppProviders and handles the high-level UI structure.
- */
 export const AppContent: React.FC<AppContentProps> = ({
-    auth,
     dateNav,
     ui,
     dailyRecordHook,
@@ -46,6 +40,7 @@ export const AppContent: React.FC<AppContentProps> = ({
     fileOps,
     nurseSignature
 }) => {
+    const auth = useAuth();
     const { record, syncStatus, lastSyncTime } = dailyRecordHook;
     const { isSignatureMode, currentDateString } = dateNav;
 
@@ -65,7 +60,7 @@ export const AppContent: React.FC<AppContentProps> = ({
                         onImportJSON={fileOps.handleImportJSON}
                         onOpenSettings={ui.settingsModal.open}
                         userEmail={auth.user?.email}
-                        onLogout={auth.handleLogout}
+                        onLogout={auth.signOut}
                         isFirebaseConnected={auth.isFirebaseConnected}
                     />
                 )}

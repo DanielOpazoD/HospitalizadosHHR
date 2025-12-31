@@ -8,9 +8,11 @@ import { useCallback, useMemo } from 'react';
 import { useDailyRecordQuery, useSaveDailyRecordMutation, usePatchDailyRecordMutation } from './useDailyRecordQuery';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../config/queryClient';
-import { SyncStatus, UseDailyRecordSyncResult } from './useDailyRecordSync';
+import { SyncStatus, UseDailyRecordSyncResult } from './useDailyRecordTypes';
 import { DailyRecord } from '../types';
 import { DailyRecordPatchLoose } from './useDailyRecordTypes';
+import { useNotification } from '../context/UIContext';
+import { ConcurrencyError } from '../services/storage/firestoreService';
 
 export const useDailyRecordSyncQuery = (
     currentDateString: string,
@@ -44,10 +46,23 @@ export const useDailyRecordSyncQuery = (
         dataUpdatedAt ? new Date(dataUpdatedAt) : null,
         [dataUpdatedAt]);
 
+    const { error: notifyError } = useNotification();
+
     // 4. Compatibility handlers
     const saveAndUpdate = useCallback(async (updatedRecord: DailyRecord) => {
-        await saveMutation.mutateAsync(updatedRecord);
-    }, [saveMutation]);
+        try {
+            await saveMutation.mutateAsync(updatedRecord);
+        } catch (err) {
+            if (err instanceof ConcurrencyError) {
+                notifyError('Conflicto de Edición', err.message);
+                // Auto-refresh after 2 seconds to show new data
+                setTimeout(() => {
+                    refetch();
+                }, 2000);
+            }
+            throw err;
+        }
+    }, [saveMutation, notifyError, refetch]);
 
     const patchRecord = useCallback(async (partial: DailyRecordPatchLoose) => {
         await patchMutation.mutateAsync(partial);

@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
-import { useDailyRecordSync } from '../../hooks/useDailyRecordSync';
+import { renderHook, act, waitFor } from '@testing-library/react';
+import React from 'react';
+import { useDailyRecordSyncQuery } from '../../hooks/useDailyRecordSyncQuery';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { DailyRecord } from '../../types';
 import { ConcurrencyError } from '../../services/storage/firestoreService';
 
@@ -38,22 +40,31 @@ const createMockRecord = (date: string): DailyRecord => ({
     beds: {}, discharges: [], transfers: [], cma: [], nurses: []
 } as any);
 
+const createWrapper = () => {
+    const queryClient = new QueryClient({
+        defaultOptions: {
+            queries: { retry: false },
+            mutations: { retry: false },
+        },
+    });
+    return ({ children }: { children: React.ReactNode }) => (
+        <QueryClientProvider client={queryClient} > {children} </QueryClientProvider>
+    );
+};
+
 describe('Concurrency Handling Integration', () => {
     beforeEach(() => {
-        vi.useFakeTimers();
         vi.clearAllMocks();
         mockGetForDate.mockResolvedValue(createMockRecord('2024-12-28'));
-    });
-
-    afterEach(() => {
-        vi.useRealTimers();
     });
 
     it('should handle ConcurrencyError correctly', async () => {
         // Setup: Repository throws ConcurrencyError on save
         mockSave.mockRejectedValue(new ConcurrencyError('Remote is newer'));
 
-        const { result } = renderHook(() => useDailyRecordSync('2024-12-28'));
+        const { result } = renderHook(() => useDailyRecordSyncQuery('2024-12-28'), {
+            wrapper: createWrapper()
+        });
 
         // Wait for mount
         await act(async () => { await Promise.resolve(); });
@@ -62,21 +73,26 @@ describe('Concurrency Handling Integration', () => {
 
         // Action: Try to save
         await act(async () => {
-            await result.current.saveAndUpdate(newRecord);
-            // Advance timers slightly to allow catch block to execute
-            await vi.advanceTimersByTimeAsync(100);
+            try {
+                await result.current.saveAndUpdate(newRecord);
+            } catch (e) {
+                // Expected to throw or be handled
+            }
         });
 
         // Assertions
-        expect(result.current.syncStatus).toBe('error');
-        expect(mockNotificationError).toHaveBeenCalledWith('Conflicto de Edición', 'Remote is newer');
+        // Assertions
+        await waitFor(() => {
+            expect(result.current.syncStatus).toBe('error');
+            expect(mockNotificationError).toHaveBeenCalledWith('Conflicto de Edición', 'Remote is newer');
+        });
 
         // Verify Refresh Logic
         // The hook sets a timeout of 2000ms to refresh
         mockGetForDate.mockClear(); // Clear initial load call
 
         await act(async () => {
-            await vi.advanceTimersByTimeAsync(2000);
+            await new Promise(resolve => setTimeout(resolve, 2100));
         });
 
         expect(mockGetForDate).toHaveBeenCalledWith('2024-12-28');

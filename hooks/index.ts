@@ -43,14 +43,14 @@ export { useHandoffLogic } from './useHandoffLogic';
 
 // Re-export types from hooks that define them
 export type { DailyRecordContextType, DailyRecordPatch, DailyRecordPatchLoose } from './useDailyRecordTypes';
-export type { SyncStatus } from './useDailyRecordSync';
+export type { SyncStatus } from './useDailyRecordTypes';
 export type { BedManagementActions } from './useBedManagement';
 export type { ClinicalCribActions } from './useClinicalCrib';
 export type { ValidationResult, PatientValidationActions } from './usePatientValidation';
 export type { BedOperationsActions } from './useBedOperations';
 
 // Internal sync hook (exposed for testing/advanced use)
-export { useDailyRecordSync } from './useDailyRecordSync';
+
 
 // Feature Flags
 export { useFeatureFlag, useAllFeatureFlags } from './useFeatureFlag';

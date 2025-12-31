@@ -5,7 +5,24 @@
  */
 
 import { DailyRecord, PatientData, CudyrScore, TransferData, PatientFieldValue, CMAData, DischargeData } from '../types';
-import { SyncStatus } from './useDailyRecordSync';
+
+// ============================================================================
+// Sync Types
+// ============================================================================
+
+export type SyncStatus = 'idle' | 'saving' | 'saved' | 'error';
+
+export interface UseDailyRecordSyncResult {
+    record: DailyRecord | null;
+    setRecord: (record: DailyRecord | null | ((prev: DailyRecord | null) => DailyRecord | null)) => void;
+    syncStatus: SyncStatus;
+    lastSyncTime: Date | null;
+    saveAndUpdate: (updatedRecord: DailyRecord) => Promise<void>;
+    patchRecord: (partial: DailyRecordPatchLoose) => Promise<void>;
+    markLocalChange: () => void;
+    refresh: () => void;
+}
+
 
 // ============================================================================
 // Patch Types for Type-Safe Firestore Updates

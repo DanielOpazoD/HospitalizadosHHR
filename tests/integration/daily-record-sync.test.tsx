@@ -4,8 +4,11 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
-import { useDailyRecordSync } from '../../hooks/useDailyRecordSync';
+import { renderHook, act, waitFor } from '@testing-library/react';
+import React from 'react';
+import { useDailyRecordSyncQuery } from '../../hooks/useDailyRecordSyncQuery';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
 import { DailyRecord } from '../../types';
 
 // ============================================================================
@@ -76,9 +79,21 @@ const createMockRecord = (date: string): DailyRecord => ({
 // Tests
 // ============================================================================
 
+const createWrapper = () => {
+    const queryClient = new QueryClient({
+        defaultOptions: {
+            queries: { retry: false },
+            mutations: { retry: false },
+        },
+    });
+    return ({ children }: { children: React.ReactNode }) => (
+        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+};
+
+
 describe('DailyRecord Sync Integration', () => {
     beforeEach(() => {
-        vi.useFakeTimers();
         vi.clearAllMocks();
         mockGetForDate.mockReturnValue(null);
         mockSyncWithFirestore.mockResolvedValue(null);
@@ -86,75 +101,73 @@ describe('DailyRecord Sync Integration', () => {
         mockUpdatePartial.mockResolvedValue(undefined);
     });
 
-    afterEach(() => {
-        vi.useRealTimers();
-    });
-
     it('should load local record on mount', async () => {
         const localRecord = createMockRecord('2024-12-28');
         mockGetForDate.mockResolvedValue(localRecord); // Mocking async return based on implementation if needed
 
-        const { result } = renderHook(() => useDailyRecordSync('2024-12-28', false, true));
+        const { result } = renderHook(() => useDailyRecordSyncQuery('2024-12-28', false, true), { wrapper: createWrapper() });
 
-        await act(async () => {
-            // Let effects run
-            await Promise.resolve();
-        });
+
 
         // Wait for state update
         // Using wait for implied by hook usage is tricky without waitFor from testing-library
         // But renderHook returns result which mutates.
         // We can just rely on state being there if act waited enough.
-        expect(result.current.record).toEqual(localRecord);
+        await waitFor(() => {
+            expect(result.current.record).toEqual(localRecord);
+        });
         expect(mockGetForDate).toHaveBeenCalledWith('2024-12-28');
     });
 
     it('should subscribe to remote changes on mount', async () => {
-        renderHook(() => useDailyRecordSync('2024-12-28', false, true));
+        renderHook(() => useDailyRecordSyncQuery('2024-12-28', false, true), { wrapper: createWrapper() });
 
-        await act(async () => {
-            await Promise.resolve();
-        });
+
 
         expect(mockSubscribe).toHaveBeenCalledWith('2024-12-28', expect.any(Function));
     });
 
     it('should update record when remote change is received (no local pending)', async () => {
-        const { result } = renderHook(() => useDailyRecordSync('2024-12-28', false, true));
+        const { result } = renderHook(() => useDailyRecordSyncQuery('2024-12-28', false, true), { wrapper: createWrapper() });
 
         const remoteRecord = createMockRecord('2024-12-28');
         remoteRecord.lastUpdated = '2024-12-28T13:00:00Z';
 
-        // Wait for mount
-        await act(async () => { await Promise.resolve(); });
+
 
         // Trigger the callback passed to mockSubscribe
         // We need to capture it after it's been called
         const subscribeCallback = mockSubscribe.mock.calls[0][1];
 
+        // Update mock to return the remote record on next fetch (if invalidation happens)
+        mockGetForDate.mockResolvedValue(remoteRecord);
+
         await act(async () => {
             subscribeCallback(remoteRecord, false); // hasPendingWrites = false
         });
 
-        expect(result.current.record).toEqual(remoteRecord);
+        await waitFor(() => {
+            expect(result.current.record).toEqual(remoteRecord);
+        });
     });
 
     // ... (skipping some unchanged tests) ...
 
     it('should save and update state on saveAndUpdate call', async () => {
-        const { result } = renderHook(() => useDailyRecordSync('2024-12-28', false, true));
+        const { result } = renderHook(() => useDailyRecordSyncQuery('2024-12-28', false, true), { wrapper: createWrapper() });
         const newRecord = createMockRecord('2024-12-28');
         newRecord.nurses = ['Nurse A'];
 
-        // Wait for initial load to settle so it doesn't overwrite our save later implies
-        await act(async () => { await Promise.resolve(); });
+
 
         await act(async () => {
+            // Update mock to return new record on refetch
+            mockGetForDate.mockResolvedValue(newRecord);
             // Note: saveAndUpdate sets record immediately
             await result.current.saveAndUpdate(newRecord);
             // Do NOT run all timers here, or it will flip back to idle
             // Just enough to resolve promises
-            await vi.advanceTimersByTimeAsync(100);
+
         });
 
         // Updated expectation: save now receives 2 arguments (record, previousTimestamp)
@@ -166,24 +179,33 @@ describe('DailyRecord Sync Integration', () => {
         // We didn't wait for loadInitial in this specific test! So record is null.
         expect(mockSave).toHaveBeenCalledTimes(1);
         expect(mockSave.mock.calls[0][0]).toEqual(newRecord);
-        expect(result.current.record).toEqual(newRecord);
-        expect(result.current.syncStatus).toBe('saved'); // After await, it should be saved
+        await waitFor(() => {
+            expect(result.current.record).toEqual(newRecord);
+            expect(result.current.syncStatus).toBe('saved');
+        });
     });
 
     it('should perform patch update and keep state in sync', async () => {
         const initialRecord = createMockRecord('2024-12-28');
         mockGetForDate.mockReturnValue(initialRecord);
 
-        const { result } = renderHook(() => useDailyRecordSync('2024-12-28', false, true));
+        const { result } = renderHook(() => useDailyRecordSyncQuery('2024-12-28', false, true), { wrapper: createWrapper() });
         const partial = { 'beds.R1.patientName': 'Nuevo Paciente' };
 
-        // WAITING FOR INITIAL LOAD
-        await act(async () => { await Promise.resolve(); });
+        // WAITING FOR INITIAL LOAD for optimistic update to work (needs previous record)
+        await waitFor(() => {
+            expect(result.current.record).toEqual(initialRecord);
+        });
+
+
 
         await act(async () => {
+            // Manually update the mock return for the NEXT call
+            mockGetForDate.mockResolvedValue({ ...initialRecord, beds: { R1: { patientName: 'Nuevo Paciente' } } } as any);
+
             await result.current.patchRecord(partial);
             // Run timers just enough to process async state updates but NOT the 2000ms idle timeout
-            await vi.advanceTimersByTimeAsync(100);
+
         });
 
         expect(mockUpdatePartial).toHaveBeenCalledWith('2024-12-28', partial);
@@ -193,12 +215,14 @@ describe('DailyRecord Sync Integration', () => {
 
     it('should handle save errors and update syncStatus', async () => {
         mockSave.mockRejectedValue(new Error('Firebase error'));
-        const { result } = renderHook(() => useDailyRecordSync('2024-12-28', false, true));
+        const { result } = renderHook(() => useDailyRecordSyncQuery('2024-12-28', false, true), { wrapper: createWrapper() });
 
         await act(async () => {
             try { await result.current.saveAndUpdate(createMockRecord('2024-12-28')); } catch { }
         });
 
-        expect(result.current.syncStatus).toBe('error');
+        await waitFor(() => {
+            expect(result.current.syncStatus).toBe('error');
+        });
     });
 });

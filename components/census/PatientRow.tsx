@@ -152,7 +152,7 @@ const PatientRowComponent: React.FC<PatientRowProps> = ({ bed, data, currentDate
                 "text-[12px] leading-tight"
             )}>
                 {/* Action Menu */}
-                <td className="p-1 text-center border-r border-slate-200 relative w-10 print:hidden">
+                <td className="p-0 text-center border-r border-slate-200 relative w-10 print:hidden">
                     <PatientActionMenu
                         isBlocked={!!isBlocked}
                         onAction={handleAction}
@@ -182,7 +182,7 @@ const PatientRowComponent: React.FC<PatientRowProps> = ({ bed, data, currentDate
                 />
 
                 {/* Bed Type */}
-                <td className="p-1 border-r border-slate-100 text-center w-16">
+                <td className="p-0 border-r border-slate-100 text-center w-16">
                     <span className={clsx(
                         "text-[9px] uppercase font-bold px-1.5 py-0.5 rounded border block tracking-tighter",
                         bed.type === 'UTI'
@@ -195,7 +195,7 @@ const PatientRowComponent: React.FC<PatientRowProps> = ({ bed, data, currentDate
 
                 {/* Data Cells - Always render PatientInputCells to preserve focus */}
                 {isBlocked ? (
-                    <td colSpan={10} className="p-2 bg-slate-50/50 text-center">
+                    <td colSpan={10} className="p-1 bg-slate-50/50 text-center">
                         <div className="text-slate-400 text-sm flex items-center justify-center gap-2 italic">
                             <AlertCircle size={14} className="text-red-300/60" />
                             <span>Cama Bloqueada</span>
@@ -223,10 +223,10 @@ const PatientRowComponent: React.FC<PatientRowProps> = ({ bed, data, currentDate
             {/* CLINICAL CRIB SUB-ROW (If Active) */}
             {data.clinicalCrib && !isBlocked && (
                 <tr className="hover:bg-slate-50 transition-colors border-b border-slate-200 text-[13px] leading-tight">
-                    <td className="border-r border-slate-200 text-center p-1.5">
+                    <td className="border-r border-slate-200 text-center p-0">
                         {/* Empty cell to align with action menu column */}
                     </td>
-                    <td className="p-1 text-right border-r border-slate-200 align-middle">
+                    <td className="p-0 text-right border-r border-slate-200 align-middle">
                         <div className="flex justify-center items-center h-full">
                             <button
                                 onClick={() => setShowCribDemographics(true)}
@@ -237,7 +237,7 @@ const PatientRowComponent: React.FC<PatientRowProps> = ({ bed, data, currentDate
                             </button>
                         </div>
                     </td>
-                    <td className="p-1.5 border-r border-slate-200 text-center">
+                    <td className="p-0 border-r border-slate-200 text-center">
                         <span className="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-full border block bg-purple-100 text-purple-700 border-purple-200">
                             CUNA
                         </span>

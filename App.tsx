@@ -6,9 +6,9 @@
  */
 
 import React from 'react';
-import { useDailyRecord, useAuthState, useDateNavigation, useFileOperations, useExistingDays, useCensusEmail, useSignatureMode, useAppState } from '@/hooks';
+import { useDailyRecord, useDateNavigation, useFileOperations, useExistingDays, useCensusEmail, useSignatureMode, useAppState } from '@/hooks';
 import { UseDateNavigationReturn } from '@/hooks/useDateNavigation';
-import { UseAuthStateReturn } from '@/hooks/useAuthState';
+import { useAuth, AuthContextType } from '@/context/AuthContext';
 import { useStorageMigration } from '@/hooks/useStorageMigration';
 import { Navbar, DateStrip, SettingsModal, TestAgent, SyncWatcher, DemoModePanel, LoginPage } from '@/components';
 import { GlobalErrorBoundary } from '@/components/shared/GlobalErrorBoundary';
@@ -57,16 +57,16 @@ function App() {
   useStorageMigration();
 
   // Auth state
-  const auth = useAuthState();
+  const auth = useAuth();
   useSyncFirestoreStatus(auth.isFirebaseConnected);
 
   // Date navigation
   const dateNav = useDateNavigation();
 
-  const { isSignatureMode, currentDateString } = useSignatureMode(dateNav.currentDateString, auth.user, auth.authLoading);
+  const { isSignatureMode, currentDateString } = useSignatureMode(dateNav.currentDateString, auth.user, auth.isLoading);
 
   // Loading state
-  if (auth.authLoading) {
+  if (auth.isLoading) {
     return (
       <div className="min-h-screen bg-slate-100 flex items-center justify-center">
         <div className="animate-pulse text-medical-600 text-xl font-bold">Cargando...</div>
@@ -90,7 +90,7 @@ function App() {
  * Inner component to handle hook instantiation AFTER providers are balanced
  */
 interface AppInnerProps {
-  auth: UseAuthStateReturn & { isOfflineMode: boolean };
+  auth: AuthContextType;
   dateNav: UseDateNavigationReturn & { isSignatureMode: boolean };
 }
 
@@ -114,7 +114,6 @@ function AppInner({ auth, dateNav }: AppInnerProps) {
 
   return (
     <AppContent
-      auth={auth}
       dateNav={{ ...dateNav, existingDaysInMonth }}
       ui={ui}
       dailyRecordHook={dailyRecordHook}

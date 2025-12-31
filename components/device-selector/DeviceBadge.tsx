@@ -10,7 +10,7 @@ interface DeviceBadgeProps {
     currentDate?: string;
 }
 
-export const DeviceBadge: React.FC<DeviceBadgeProps> = ({
+export const DeviceBadge: React.FC<DeviceBadgeProps> = React.memo(({
     device,
     deviceDetails = {},
     currentDate
@@ -52,4 +52,6 @@ export const DeviceBadge: React.FC<DeviceBadgeProps> = ({
             )}
         </span>
     );
-};
+});
+
+DeviceBadge.displayName = 'DeviceBadge';

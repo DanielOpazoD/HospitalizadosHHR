@@ -28,7 +28,7 @@ import {
 import { generateDemoRecord } from '../services/utils/demoDataGenerator';
 
 // Sync hooks
-import { useDailyRecordSync } from './useDailyRecordSync';
+
 import { useDailyRecordSyncQuery } from './useDailyRecordSyncQuery';
 
 // Domain hooks
@@ -44,7 +44,7 @@ import { DailyRecordContextType } from './useDailyRecordTypes';
 
 // Re-export types for consumers
 export type { DailyRecordContextType } from './useDailyRecordTypes';
-export type { SyncStatus } from './useDailyRecordSync';
+export type { SyncStatus } from './useDailyRecordTypes';
 
 /**
  * Main hook for daily record management.
