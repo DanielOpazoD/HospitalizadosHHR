@@ -76,7 +76,7 @@ export const HandoffRow: React.FC<HandoffRowProps> = ({
     return (
         <tr className={clsx(
             "border-b border-slate-200 hover:bg-slate-50 transition-colors text-sm print:last:border-b-0",
-            isSubRow ? "bg-pink-50/40 print:bg-pink-50" : "bg-white"
+            isSubRow ? "bg-pink-50/40 print:!bg-white" : "bg-white"
         )}>
             {/* Cama + Días Hosp - Vertically Centered */}
             <td className="p-2 border-r border-slate-200 text-center w-20 align-middle print:w-auto print:text-[10px] print:p-1">

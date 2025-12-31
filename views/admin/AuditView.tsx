@@ -7,12 +7,17 @@ import {
     Box, Boxes, FileDown, LayoutGrid, History, BedDouble
 } from 'lucide-react';
 import { getAuditLogs, AUDIT_ACTION_LABELS } from '../../services/admin/auditService';
-import { AuditLogEntry, AuditAction } from '../../types/audit';
+import { AuditAction, AuditLogEntry, GroupedAuditLogEntry } from '../../types/audit';
 import { generateAuditWorkbook } from '../../services/exporters/auditWorkbook';
 import { workbookToBuffer } from '../../services/exporters/excelUtils';
 import { saveAs } from 'file-saver';
 import clsx from 'clsx';
 import { useAuditStats, formatDuration, getActionCriticality } from '../../hooks/useAuditStats';
+import { PatientTraceability } from './components/audit/PatientTraceability';
+import { ExportKeysPanel } from './components/audit/ExportKeysPanel';
+import { AuditHeader } from './components/audit/AuditHeader';
+import { AuditStatsDashboard } from './components/audit/AuditStatsDashboard';
+import { AuditFilters } from './components/audit/AuditFilters';
 
 // Format ISO timestamp to readable format
 const formatTimestamp = (iso: string): string => {
@@ -123,668 +128,9 @@ const renderHumanDetails = (log: AuditLogEntry) => {
     }
 };
 
-// ============================================================================
-// Export Keys Panel - Shows passwords for census dates
-// ============================================================================
-const ExportKeysPanel: React.FC = () => {
-    const [passwords, setPasswords] = useState<Array<{ date: string; password: string; source?: string; createdAt?: string }>>([]);
-    const [loading, setLoading] = useState(true);
+// Modular components imported from ./components/audit/
 
-    useEffect(() => {
-        const loadPasswords = async () => {
-            setLoading(true);
-            try {
-                // Fetch stored passwords from Firestore
-                const { getStoredPasswords } = await import('../../services/security/exportPasswordService');
-                const storedPasswords = await getStoredPasswords(60); // Last 60 passwords
-
-                setPasswords(storedPasswords.map(p => ({
-                    date: p.date,
-                    password: p.password,
-                    source: (p as any).source,
-                    createdAt: p.createdAt
-                })));
-            } catch (error) {
-                console.error('Failed to load passwords:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        loadPasswords();
-    }, []);
-
-    const formatDateDisplay = (dateStr: string): string => {
-        const [year, month, day] = dateStr.split('-');
-        const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-        return `${day} ${monthNames[parseInt(month, 10) - 1]} ${year} `;
-    };
-
-    const copyToClipboard = (password: string) => {
-        navigator.clipboard.writeText(password);
-    };
-
-    if (loading) {
-        return (
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-12 text-center">
-                <RefreshCw size={32} className="animate-spin text-rose-500 mx-auto mb-4" />
-                <p className="text-slate-400">Cargando claves de exportación...</p>
-            </div>
-        );
-    }
-
-    return (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-            <div className="p-6 border-b border-slate-100 bg-gradient-to-r from-rose-50 to-pink-50">
-                <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-rose-600 flex items-center justify-center shadow-lg shadow-rose-200">
-                        <Key className="text-white" size={24} />
-                    </div>
-                    <div>
-                        <h3 className="text-lg font-bold text-slate-900">Claves de Exportación Excel</h3>
-                        <p className="text-sm text-slate-500">
-                            Registro permanente de contraseñas usadas en archivos exportados. Guardadas automáticamente en Firestore.
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            <div className="p-4">
-                {passwords.length === 0 ? (
-                    <div className="text-center py-12">
-                        <Key size={48} className="mx-auto text-slate-200 mb-4" />
-                        <p className="text-slate-500 font-medium">No hay claves registradas aún</p>
-                        <p className="text-slate-400 text-sm mt-1">Las claves se guardan automáticamente al enviar correos o descargar archivos Excel.</p>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {passwords.map(({ date, password, source }) => (
-                            <div
-                                key={date}
-                                className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100 hover:border-rose-200 hover:bg-rose-50/30 transition-all group"
-                            >
-                                <div className="flex flex-col gap-1">
-                                    <div className="flex items-center gap-2">
-                                        <Calendar size={14} className="text-slate-400" />
-                                        <span className="font-medium text-slate-700">{formatDateDisplay(date)}</span>
-                                    </div>
-                                    {source && (
-                                        <span className={clsx(
-                                            "text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded w-fit",
-                                            source === 'email' ? "bg-indigo-100 text-indigo-600" : "bg-emerald-100 text-emerald-600"
-                                        )}>
-                                            {source === 'email' ? '📧 Correo' : '📥 Descarga'}
-                                        </span>
-                                    )}
-                                </div>
-                                <button
-                                    onClick={() => copyToClipboard(password)}
-                                    className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-lg border border-slate-200 hover:border-rose-300 hover:bg-rose-50 transition-all font-mono text-sm font-bold text-rose-600 group-hover:shadow-sm"
-                                    title="Clic para copiar"
-                                >
-                                    {password}
-                                </button>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
-
-            <div className="p-4 border-t border-slate-100 bg-emerald-50/50">
-                <div className="flex items-center gap-2 text-emerald-700 text-xs font-medium">
-                    <CheckCircle2 size={14} />
-                    <span>Las claves se guardan permanentemente en Firestore. Si necesita una clave antigua, siempre estará disponible aquí.</span>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-// ============================================================================
-// Area 11: Patient Traceability Component
-// ============================================================================
-interface PatientTraceabilityProps {
-    logs: AuditLogEntry[];
-    searchRut: string;
-    onSelectPatient: (rut: string) => void;
-}
-
-const PatientTraceabilityComponent: React.FC<PatientTraceabilityProps> = ({ logs, searchRut, onSelectPatient }) => {
-    const [traceTab, setTraceTab] = useState<'TIMELINE' | 'SUMMARY'>('TIMELINE');
-
-    // Area 12: List of patients hospitalized in the last 30 days
-    const recentPatients = useMemo(() => {
-        const patientMap = new Map<string, { rut: string, name: string, lastEvent: string }>();
-
-        // Filter logs that have patient info
-        logs.forEach(log => {
-            const rut = (log.patientIdentifier || (log.details as any)?.rut as string || '').replace(/[^0-9kK]/g, '').toLowerCase();
-            const name = (log.details as any)?.patientName as string;
-
-            if (rut && name) {
-                const existing = patientMap.get(rut);
-                if (!existing || new Date(log.timestamp) > new Date(existing.lastEvent)) {
-                    patientMap.set(rut, { rut, name, lastEvent: log.timestamp });
-                }
-            }
-        });
-
-        return Array.from(patientMap.values())
-            .sort((a, b) => new Date(b.lastEvent).getTime() - new Date(a.lastEvent).getTime())
-            .slice(0, 10);
-    }, [logs]);
-
-    // Sort by timestamp asc for chronology
-    const chronologicalLogs = useMemo(() => {
-        if (!searchRut) return [];
-        return [...logs].sort((a, b) =>
-            new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-        );
-    }, [logs, searchRut]);
-
-    // Basic aggregation
-    const admissions = useMemo(() => chronologicalLogs.filter(l => l.action === 'PATIENT_ADMITTED'), [chronologicalLogs]);
-    const discharges = useMemo(() => chronologicalLogs.filter(l => l.action === 'PATIENT_DISCHARGED'), [chronologicalLogs]);
-    const lastNote = useMemo(() => chronologicalLogs.filter(l => (l.details as any)?.pathology).pop(), [chronologicalLogs]);
-    const lastBed = useMemo(() => chronologicalLogs.filter(l => (l.details as any)?.bedId).pop(), [chronologicalLogs]);
-
-    // Area 13: Advanced Clinical Processing
-    const clinicalData = useMemo(() => {
-        const bedHistory: { bedId: string, from: Date, to: Date | null, days: number }[] = [];
-        let totalUpcMs = 0;
-        const diagnosisHistory: { date: Date, pathology: string }[] = [];
-        const devicesHistory: { date: Date, name: string, action: 'INSTALL' | 'REMOVE', details: string }[] = [];
-
-        if (!searchRut || chronologicalLogs.length === 0) {
-            return {
-                bedHistory: [],
-                totalUpcDays: 0,
-                diagnosisHistory: [],
-                devicesHistory: [],
-                firstAdmission: undefined,
-                lastDischarge: undefined
-            };
-        }
-
-        // Track current state during iteration
-        let currentBed: string | null = null;
-        let lastBedChange: Date | null = null;
-        let isCurrentlyUpc = false;
-        let lastUpcChange: Date | null = null;
-
-        chronologicalLogs.forEach((log) => {
-            const timestamp = new Date(log.timestamp);
-            const details = log.details as any;
-
-            // 1. Bed tracking
-            const logBedId = details?.bedId;
-            if (logBedId && logBedId !== currentBed) {
-                if (currentBed && lastBedChange) {
-                    const duration = timestamp.getTime() - lastBedChange.getTime();
-                    bedHistory.push({
-                        bedId: currentBed,
-                        from: lastBedChange,
-                        to: timestamp,
-                        days: Math.max(1, Math.ceil(duration / (1000 * 60 * 60 * 24)))
-                    });
-                }
-                currentBed = logBedId;
-                lastBedChange = timestamp;
-            }
-
-            // 2. UPC tracking (clinicalFlags.isUPC or isUPC)
-            const upcNew = details?.changes?.isUPC?.new ?? details?.changes?.["clinicalFlags.isUPC"]?.new ?? details?.isUPC;
-            if (upcNew !== undefined && upcNew !== isCurrentlyUpc) {
-                if (isCurrentlyUpc && lastUpcChange) {
-                    totalUpcMs += timestamp.getTime() - lastUpcChange.getTime();
-                }
-                isCurrentlyUpc = !!upcNew;
-                lastUpcChange = timestamp;
-            }
-
-            // 3. Diagnosis evolution
-            const pathology = details?.changes?.pathology?.new || details?.pathology;
-            if (pathology) {
-                diagnosisHistory.push({ date: timestamp, pathology });
-            }
-
-            // 4. Invasive devices
-            if (details?.changes?.deviceDetails) {
-                Object.entries(details.changes.deviceDetails).forEach(([name, delta]: [string, any]) => {
-                    devicesHistory.push({
-                        date: timestamp,
-                        name,
-                        action: delta.new ? 'INSTALL' : 'REMOVE',
-                        details: delta.new?.installationDate ? `Instalado el ${delta.new.installationDate}` : 'Retirado'
-                    });
-                });
-            }
-        });
-
-        // Close last bed
-        if (currentBed && lastBedChange) {
-            const lastLog = discharges[discharges.length - 1];
-            const end = (discharges.length > 0 && lastLog) ? new Date(lastLog.timestamp) : new Date();
-            const duration = end.getTime() - (lastBedChange as Date).getTime();
-            bedHistory.push({
-                bedId: currentBed,
-                from: lastBedChange,
-                to: discharges.length > 0 ? end : null,
-                days: Math.max(1, Math.ceil(duration / (1000 * 60 * 60 * 24)))
-            });
-        }
-
-        // Close last UPC period
-        if (isCurrentlyUpc && lastUpcChange) {
-            const lastLog = discharges[discharges.length - 1];
-            const end = (discharges.length > 0 && lastLog) ? new Date(lastLog.timestamp) : new Date();
-            totalUpcMs += end.getTime() - (lastUpcChange as Date).getTime();
-        }
-
-        return {
-            bedHistory: bedHistory.reverse(),
-            totalUpcDays: Math.ceil(totalUpcMs / (1000 * 60 * 60 * 24)),
-            diagnosisHistory: diagnosisHistory.reverse(),
-            devicesHistory: devicesHistory.reverse(),
-            firstAdmission: admissions[0]?.timestamp,
-            lastDischarge: discharges[discharges.length - 1]?.timestamp
-        };
-    }, [searchRut, chronologicalLogs, admissions, discharges]);
-
-    if (!searchRut) {
-        return (
-            <div className="bg-white rounded-2xl p-12 text-center border-2 border-dashed border-slate-200">
-                <div className="w-16 h-16 bg-cyan-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <History size={32} className="text-cyan-500" />
-                </div>
-                <h3 className="text-lg font-bold text-slate-700 mb-2">Trazabilidad Clínica</h3>
-                <p className="text-slate-500 max-w-md mx-auto mb-8">
-                    Ingrese un RUT en el buscador superior o seleccione un paciente reciente de la lista para reconstruir su historia clínica.
-                </p>
-
-                {recentPatients.length > 0 && (
-                    <div className="max-w-2xl mx-auto">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 text-left">Pacientes Recientes</p>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {recentPatients.map(p => (
-                                <button
-                                    key={p.rut}
-                                    onClick={() => onSelectPatient(p.rut)}
-                                    className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 hover:border-cyan-200 hover:bg-cyan-50 transition-all text-left group"
-                                >
-                                    <div className="w-8 h-8 rounded-lg bg-slate-50 group-hover:bg-white flex items-center justify-center text-slate-400 group-hover:text-cyan-500 transition-colors">
-                                        <User size={16} />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-bold text-slate-700 truncate">{p.name}</p>
-                                        <p className="text-[10px] text-slate-400 font-mono">{p.rut}</p>
-                                    </div>
-                                    <ChevronRight size={14} className="text-slate-300 group-hover:text-cyan-400" />
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                )}
-            </div>
-        );
-    }
-
-    if (logs.length === 0) {
-        return (
-            <div className="bg-white rounded-2xl p-12 text-center border-2 border-dashed border-slate-200">
-                <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Search size={32} className="text-slate-300" />
-                </div>
-                <h3 className="text-lg font-bold text-slate-700 mb-2">Sin registros</h3>
-                <p className="text-slate-500">No se encontraron eventos asociados al RUT {searchRut}.</p>
-            </div>
-        );
-    }
-
-    return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {/* Patient Header Summary */}
-            <div className="bg-gradient-to-r from-cyan-600 to-blue-700 rounded-2xl p-6 text-white shadow-lg border border-cyan-500/20">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    <div className="flex items-center gap-4">
-                        <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/30">
-                            <User size={32} />
-                        </div>
-                        <div>
-                            <h2 className="text-2xl font-black tracking-tight">{(lastNote?.details as any)?.patientName || 'Paciente'}</h2>
-                            <p className="text-cyan-100 font-mono text-lg">{searchRut}</p>
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4 md:flex md:items-center md:gap-8">
-                        <div className="bg-white/10 backdrop-blur-sm px-4 py-2 rounded-xl border border-white/10">
-                            <p className="text-[10px] font-bold text-cyan-200 uppercase tracking-widest text-center">Estado Actual</p>
-                            <p className="text-lg font-black text-center">{discharges.length >= admissions.length ? '🏠 ALTA' : '🏥 HOSPITALIZADO'}</p>
-                        </div>
-                        <div className="bg-white/10 backdrop-blur-sm px-4 py-2 rounded-xl border border-white/10">
-                            <p className="text-[10px] font-bold text-cyan-200 uppercase tracking-widest text-center">Ingresos</p>
-                            <p className="text-lg font-black text-center">{admissions.length}</p>
-                        </div>
-                        <div className="bg-white/10 backdrop-blur-sm px-4 py-2 rounded-xl border border-white/10">
-                            <p className="text-[10px] font-bold text-cyan-200 uppercase tracking-widest text-center">Última Cama</p>
-                            <p className="text-lg font-black text-center">{(lastBed?.details as any)?.bedId || '-'}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Area 13: Navigation Tabs */}
-            <div className="flex items-center gap-1 p-1 bg-slate-100/50 rounded-xl w-fit border border-slate-200/50">
-                <button
-                    onClick={() => setTraceTab('TIMELINE')}
-                    className={clsx(
-                        "flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold transition-all",
-                        traceTab === 'TIMELINE' ? "bg-white text-cyan-600 shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-white/50"
-                    )}
-                >
-                    <History size={14} />
-                    Línea de Tiempo
-                </button>
-                <button
-                    onClick={() => setTraceTab('SUMMARY')}
-                    className={clsx(
-                        "flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold transition-all",
-                        traceTab === 'SUMMARY' ? "bg-white text-indigo-600 shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-white/50"
-                    )}
-                >
-                    <FileText size={14} />
-                    Resumen Clínico
-                </button>
-            </div>
-
-            {traceTab === 'TIMELINE' ? (
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                    {/* Timeline Column */}
-                    <div className="lg:col-span-8 space-y-4">
-                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                            <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
-                                <h3 className="font-bold text-slate-700 flex items-center gap-2">
-                                    <History size={18} className="text-cyan-500" />
-                                    Historial Cronológico
-                                </h3>
-                                <span className="text-xs text-slate-400 font-medium">{chronologicalLogs.length} eventos registrados</span>
-                            </div>
-                            <div className="p-6 relative">
-                                {/* Vertical Line */}
-                                <div className="absolute left-9 top-6 bottom-6 w-0.5 bg-slate-100" />
-
-                                <div className="space-y-8">
-                                    {chronologicalLogs.map((log) => {
-                                        const date = new Date(log.timestamp);
-                                        const isAdmission = log.action === 'PATIENT_ADMITTED';
-                                        const isDischarge = log.action === 'PATIENT_DISCHARGED';
-                                        const isTransfer = log.action === 'PATIENT_TRANSFERRED';
-                                        const isDevice = (log.details as any)?.changes?.deviceDetails;
-
-                                        return (
-                                            <div key={log.id} className="relative flex gap-6 group">
-                                                {/* Date/Time Bubble */}
-                                                <div className="w-16 pt-1 text-right">
-                                                    <p className="text-xs font-black text-slate-900 leading-none">{date.toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })}</p>
-                                                    <p className="text-[10px] text-slate-400 font-medium mt-1">{date.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}</p>
-                                                </div>
-
-                                                {/* Timeline Node */}
-                                                <div className={clsx(
-                                                    "relative z-10 w-6 h-6 rounded-full border-4 border-white shadow-sm mt-1 flex-shrink-0",
-                                                    isAdmission ? "bg-emerald-500" :
-                                                        isDischarge ? "bg-rose-500" :
-                                                            isTransfer ? "bg-amber-500" :
-                                                                isDevice ? "bg-cyan-500" :
-                                                                    "bg-slate-300"
-                                                )} />
-
-                                                {/* Event Card */}
-                                                <div className={clsx(
-                                                    "flex-1 p-4 rounded-xl border transition-all group-hover:shadow-md",
-                                                    isAdmission ? "bg-emerald-50/50 border-emerald-100" :
-                                                        isDischarge ? "bg-rose-50/50 border-rose-100" :
-                                                            isTransfer ? "bg-amber-50/50 border-amber-100" :
-                                                                "bg-white border-slate-100"
-                                                )}>
-                                                    <div className="flex items-start justify-between mb-2">
-                                                        <h4 className="text-sm font-bold text-slate-800">
-                                                            {AUDIT_ACTION_LABELS[log.action]}
-                                                        </h4>
-                                                        <span className="text-[10px] text-slate-400 font-mono">#{log.id.slice(-6)}</span>
-                                                    </div>
-                                                    <p className="text-xs text-slate-600 leading-relaxed font-semibold">
-                                                        {log.summary}
-                                                    </p>
-
-                                                    {/* Specialized Detail Display for Traceability */}
-                                                    {(log.details as any)?.changes && (
-                                                        <div className="mt-3 bg-white/60 rounded-lg p-2.5 border border-slate-100/50 space-y-2">
-                                                            {Object.entries((log.details as any).changes).map(([field, delta]: [string, any]) => {
-                                                                if (field === 'deviceDetails') {
-                                                                    return Object.entries(delta).map(([dev, values]: [string, any]) => (
-                                                                        <div key={dev} className="flex items-center gap-2 text-[10px]">
-                                                                            <span className="bg-cyan-100 text-cyan-700 px-1.5 py-0.5 rounded font-bold">{dev}</span>
-                                                                            <span className="text-slate-400">➔</span>
-                                                                            <span className="text-slate-600">{values.new?.installationDate ? `Instalado ${values.new.installationDate}` : 'Retirado'}</span>
-                                                                        </div>
-                                                                    ));
-                                                                }
-                                                                return (
-                                                                    <div key={field} className="flex items-center gap-2 text-[10px]">
-                                                                        <span className="text-slate-400 italic capitalize">{field}:</span>
-                                                                        <span className="text-slate-500 line-through">{(delta.old as string) || 'n/a'}</span>
-                                                                        <span className="text-slate-400">➔</span>
-                                                                        <span className="text-slate-700 font-bold">{(delta.new as string) || 'n/a'}</span>
-                                                                    </div>
-                                                                );
-                                                            })}
-                                                        </div>
-                                                    )}
-
-                                                    <div className="mt-2 flex items-center gap-2">
-                                                        <div className="w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center text-[8px] font-bold text-slate-500">
-                                                            {log.userId.charAt(0).toUpperCase()}
-                                                        </div>
-                                                        <span className="text-[9px] text-slate-400">Acción by {log.userId.split('@')[0]}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Patient Summary & Stats Column (Original Content Restored) */}
-                    <div className="lg:col-span-4 space-y-6">
-                        {/* Diagnosis Evolution */}
-                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                            <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
-                                <Stethoscope size={18} className="text-amber-500" />
-                                <h3 className="font-bold text-slate-700">Diagnóstico</h3>
-                            </div>
-                            <div className="p-5 space-y-4">
-                                {chronologicalLogs.filter(l => (l.details as any)?.changes?.pathology).map((log) => (
-                                    <div key={log.id} className="relative pl-4 border-l-2 border-amber-100 pb-2 last:pb-0">
-                                        <p className="text-[10px] text-slate-400 font-bold">{new Date(log.timestamp).toLocaleDateString()}</p>
-                                        <p className="text-xs text-slate-700 mt-1">{((log.details as any)?.changes?.pathology.new as string)}</p>
-                                    </div>
-                                ))}
-                                {chronologicalLogs.filter(l => (l.details as any)?.changes?.pathology).length === 0 && (
-                                    <p className="text-xs text-slate-400 italic">No hay registros de evolución diagnóstica.</p>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Stay Stats */}
-                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                            <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
-                                <Clock size={18} className="text-indigo-500" />
-                                <h3 className="font-bold text-slate-700">Estadía Total</h3>
-                            </div>
-                            <div className="p-5">
-                                {admissions.map((adm, idx) => {
-                                    const nextDischarge = discharges.find(d => new Date(d.timestamp) > new Date(adm.timestamp));
-                                    const end = nextDischarge ? new Date(nextDischarge.timestamp) : new Date();
-                                    const days = Math.ceil((end.getTime() - new Date(adm.timestamp).getTime()) / (1000 * 60 * 60 * 24));
-
-                                    return (
-                                        <div key={adm.id} className="mb-4 last:mb-0 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                                            <div className="flex justify-between items-center mb-1">
-                                                <span className="text-[10px] font-bold text-slate-400">PERIODO {idx + 1}</span>
-                                                <span className={clsx(
-                                                    "text-[9px] px-1.5 py-0.5 rounded font-black",
-                                                    nextDischarge ? "bg-slate-200 text-slate-600" : "bg-emerald-100 text-emerald-700"
-                                                )}>
-                                                    {nextDischarge ? 'FINALIZADO' : 'ACTIVO'}
-                                                </span>
-                                            </div>
-                                            <p className="text-[11px] font-bold text-slate-700">
-                                                {new Date(adm.timestamp).toLocaleDateString()} - {nextDischarge ? new Date(nextDischarge.timestamp).toLocaleDateString() : 'Actualidad'}
-                                            </p>
-                                            <div className="mt-2 flex items-end gap-1">
-                                                <span className="text-2xl font-black text-indigo-600 leading-none">{days}</span>
-                                                <span className="text-[10px] font-bold text-indigo-400 mb-0.5">DÍAS</span>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            ) : (
-                /* Area 13: Clinical Summary View */
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-right-4 duration-500">
-                    {/* Left Column: Stats & Bed History */}
-                    <div className="lg:col-span-2 space-y-6">
-                        {/* Summary Header Cards */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-xl bg-cyan-50 flex items-center justify-center">
-                                    <Clock className="text-cyan-600" size={24} />
-                                </div>
-                                <div>
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Estadía Hospitalaria</p>
-                                    <p className="text-2xl font-black text-slate-900">
-                                        {(() => {
-                                            const start = clinicalData.firstAdmission ? new Date(clinicalData.firstAdmission) : null;
-                                            const end = clinicalData.lastDischarge ? new Date(clinicalData.lastDischarge) : new Date();
-                                            if (!start) return '-';
-                                            return `${Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))} días`;
-                                        })()}
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center">
-                                    <Zap className="text-amber-600" size={24} />
-                                </div>
-                                <div>
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Estadía UPC (Ticket)</p>
-                                    <p className="text-2xl font-black text-slate-900">{clinicalData.totalUpcDays} días</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Bed Movement History */}
-                        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                            <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-2 bg-slate-50/30">
-                                <BedDouble size={18} className="text-indigo-500" />
-                                <h3 className="font-bold text-slate-700">Historial de Camas y Movimientos</h3>
-                            </div>
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-sm">
-                                    <thead className="bg-slate-50/50 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                                        <tr>
-                                            <th className="px-5 py-3 text-left">Cama</th>
-                                            <th className="px-5 py-3 text-left">Desde</th>
-                                            <th className="px-5 py-3 text-left">Hasta</th>
-                                            <th className="px-5 py-3 text-right">Días</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-50">
-                                        {clinicalData.bedHistory.map((move, idx) => (
-                                            <tr key={idx} className="hover:bg-slate-50 transition-colors">
-                                                <td className="px-5 py-3">
-                                                    <span className="font-black text-slate-700 flex items-center gap-2">
-                                                        <MapPin size={12} className="text-slate-300" />
-                                                        {move.bedId}
-                                                    </span>
-                                                </td>
-                                                <td className="px-5 py-3 text-slate-500">{move.from.toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
-                                                <td className="px-5 py-3 text-slate-500">
-                                                    {move.to ? move.to.toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' }) : (
-                                                        <span className="text-emerald-500 font-bold uppercase text-[9px]">Actual</span>
-                                                    )}
-                                                </td>
-                                                <td className="px-5 py-3 text-right font-black text-indigo-600">{move.days}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Right Column: Diagnosis & Devices */}
-                    <div className="space-y-6">
-                        {/* Diagnosis History */}
-                        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                            <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-2 bg-slate-50/30">
-                                <Stethoscope size={18} className="text-rose-500" />
-                                <h3 className="font-bold text-slate-700">Evolución Diagnóstica</h3>
-                            </div>
-                            <div className="p-5 space-y-4">
-                                {clinicalData.diagnosisHistory.map((dx, idx) => (
-                                    <div key={idx} className="relative pl-4 border-l-2 border-rose-100 pb-2 last:pb-0">
-                                        <p className="text-[10px] text-slate-400 font-bold">{dx.date.toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })}</p>
-                                        <p className="text-xs text-slate-700 mt-1 font-medium">{dx.pathology}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Invasive Devices History */}
-                        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                            <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-2 bg-slate-50/30">
-                                <Activity size={18} className="text-cyan-500" />
-                                <h3 className="font-bold text-slate-700">Dispositivos Invasivos</h3>
-                            </div>
-                            <div className="p-5 space-y-4">
-                                {clinicalData.devicesHistory.map((dev, idx) => (
-                                    <div key={idx} className="flex items-start gap-4">
-                                        <div className={clsx(
-                                            "w-2 h-2 rounded-full mt-1.5",
-                                            dev.action === 'INSTALL' ? "bg-emerald-500" : "bg-rose-400"
-                                        )} />
-                                        <div className="flex-1">
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-[10px] font-black text-slate-400">{dev.date.toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })}</span>
-                                                <span className={clsx(
-                                                    "text-[8px] font-black px-1.5 py-0.5 rounded",
-                                                    dev.action === 'INSTALL' ? "bg-emerald-100 text-emerald-700" : "bg-rose-50 text-rose-600"
-                                                )}>
-                                                    {dev.action === 'INSTALL' ? 'INSTALADO' : 'RETIRADO'}
-                                                </span>
-                                            </div>
-                                            <p className="text-xs font-bold text-slate-700 mt-0.5">{dev.name}</p>
-                                            <p className="text-[10px] text-slate-500">{dev.details}</p>
-                                        </div>
-                                    </div>
-                                ))}
-                                {clinicalData.devicesHistory.length === 0 && (
-                                    <p className="text-xs text-slate-400 italic text-center py-4">Sin registros de dispositivos.</p>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-        </div>
-    );
-};
+// Main Audit View Components
 
 export const AuditView: React.FC = () => {
     const [logs, setLogs] = useState<AuditLogEntry[]>([]);
@@ -939,7 +285,7 @@ export const AuditView: React.FC = () => {
                 summary: `${AUDIT_ACTION_LABELS[first.action] || first.action} (${group.length} registros)`,
                 isGroup: true,
                 childLogs: group
-            } as any;
+            } as GroupedAuditLogEntry;
         }).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
     }, [filteredLogs, groupedView]);
 
@@ -1055,168 +401,17 @@ export const AuditView: React.FC = () => {
     return (
         <div className="space-y-6 animate-fade-in pb-24 font-sans max-w-[1400px] mx-auto">
             {/* Header: Glassmorphism */}
-            <header className="sticky top-0 z-20 backdrop-blur-md bg-white/80 p-6 rounded-2xl shadow-sm border border-slate-200/60 flex flex-col md:flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-200">
-                        <ClipboardList className="text-white" size={24} />
-                    </div>
-                    <div>
-                        <h2 className="text-2xl font-display font-bold text-slate-900 tracking-tight">
-                            Registro de Auditoría
-                        </h2>
-                        <p className="text-sm text-slate-500 font-medium">Cumplimiento Ley 20.584 • Integridad Clínica</p>
-                    </div>
-                </div>
+            <AuditHeader
+                onShowCompliance={() => setShowComplianceInfo(true)}
+                onExport={handleExport}
+                onRefresh={fetchLogs}
+                isExporting={exporting}
+                isLoading={loading}
+                hasLogs={filteredLogs.length > 0}
+            />
 
-                <div className="flex items-center gap-3">
-                    <button
-                        onClick={() => setShowComplianceInfo(true)}
-                        className="p-2.5 rounded-xl bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-all border border-indigo-100"
-                        title="Ver enfoque de auditoría MINSAL"
-                    >
-                        <Info size={20} />
-                    </button>
-                    <button
-                        onClick={handleExport}
-                        disabled={exporting || filteredLogs.length === 0}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 text-emerald-700 rounded-xl hover:bg-emerald-100 transition-all font-bold text-sm border border-emerald-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-                    >
-                        <Download size={18} className={exporting ? 'animate-bounce' : ''} />
-                        {exporting ? 'Exportando...' : 'Exportar Excel'}
-                    </button>
-                    <button
-                        onClick={fetchLogs}
-                        className="p-2.5 rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-100 transition-all border border-slate-200"
-                        title="Actualizar datos"
-                    >
-                        <RefreshCw size={20} className={loading ? 'animate-spin' : ''} />
-                    </button>
-                </div>
-            </header>
-
-            {/* Stats Dashboard Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {/* Today's Activity */}
-                <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
-                    <div className="flex items-center justify-between mb-3">
-                        <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
-                            <Activity className="text-indigo-600" size={20} />
-                        </div>
-                        <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
-                            Hoy
-                        </span>
-                    </div>
-                    <p className="text-2xl font-bold text-slate-900">{stats.todayCount}</p>
-                    <p className="text-xs text-slate-500 mt-1">Eventos registrados</p>
-                </div>
-
-                {/* Active Users */}
-                <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
-                    <div className="flex items-center justify-between mb-3">
-                        <div className="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center">
-                            <Users className="text-violet-600" size={20} />
-                        </div>
-                        <span className="text-[10px] font-bold text-violet-600 bg-violet-50 px-2 py-0.5 rounded-full">
-                            {stats.totalSessionsToday} sesiones
-                        </span>
-                    </div>
-                    <p className="text-2xl font-bold text-slate-900">{stats.activeUserCount}</p>
-                    <p className="text-xs text-slate-500 mt-1">Usuarios activos hoy</p>
-                </div>
-
-                {/* Critical Actions */}
-                <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
-                    <div className="flex items-center justify-between mb-3">
-                        <div className={clsx(
-                            "w-10 h-10 rounded-xl flex items-center justify-center",
-                            stats.criticalCount > 0 ? "bg-amber-50" : "bg-slate-50"
-                        )}>
-                            <Zap className={stats.criticalCount > 0 ? "text-amber-600" : "text-slate-400"} size={20} />
-                        </div>
-                        {stats.criticalCount > 0 && (
-                            <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
-                                Importante
-                            </span>
-                        )}
-                    </div>
-                    <p className="text-2xl font-bold text-slate-900">{stats.criticalCount}</p>
-                    <p className="text-xs text-slate-500 mt-1">Acciones críticas hoy</p>
-                </div>
-
-                {/* Avg Session Time */}
-                <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
-                    <div className="flex items-center justify-between mb-3">
-                        <div className="w-10 h-10 rounded-xl bg-sky-50 flex items-center justify-center">
-                            <Clock className="text-sky-600" size={20} />
-                        </div>
-                    </div>
-                    <p className="text-2xl font-bold text-slate-900">
-                        {stats.avgSessionMinutes > 0 ? formatDuration(stats.avgSessionMinutes) : '-'}
-                    </p>
-                    <p className="text-xs text-slate-500 mt-1">Tiempo promedio sesión</p>
-                </div>
-            </div>
-
-            {/* Action Breakdown Row */}
-            <div className="grid grid-cols-1 gap-4">
-                {/* Action Breakdown by Criticality */}
-                <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2">
-                            <BarChart3 size={16} className="text-slate-400" />
-                            Desglose por Tipo
-                        </h3>
-                        <span className="text-[10px] text-slate-400">Últimos {logs.length} registros</span>
-                    </div>
-                    <div className="space-y-2">
-                        {Object.entries(stats.actionBreakdown)
-                            .sort((a, b) => b[1] - a[1])
-                            .slice(0, 6)
-                            .map(([action, count]) => {
-                                const criticality = getActionCriticality(action as AuditAction);
-                                const percentage = Math.round((count / logs.length) * 100);
-                                return (
-                                    <div key={action} className="flex items-center gap-3">
-                                        <div className={clsx(
-                                            "w-1.5 h-6 rounded-full",
-                                            criticality === 'critical' ? "bg-rose-500" :
-                                                criticality === 'important' ? "bg-amber-500" : "bg-slate-300"
-                                        )} />
-                                        <div className="flex-1">
-                                            <div className="flex items-center justify-between mb-1">
-                                                <span className="text-xs font-medium text-slate-700">
-                                                    {AUDIT_ACTION_LABELS[action as AuditAction] || action}
-                                                </span>
-                                                <span className="text-xs font-bold text-slate-500">{count}</span>
-                                            </div>
-                                            <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                                <div
-                                                    className={clsx(
-                                                        "h-full rounded-full transition-all",
-                                                        criticality === 'critical' ? "bg-rose-400" :
-                                                            criticality === 'important' ? "bg-amber-400" : "bg-slate-300"
-                                                    )}
-                                                    style={{ width: `${percentage}% ` }}
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                    </div>
-                    {/* Legend */}
-                    <div className="flex items-center gap-4 mt-4 pt-3 border-t border-slate-100">
-                        <div className="flex items-center gap-1.5">
-                            <div className="w-2 h-2 rounded-full bg-rose-500" />
-                            <span className="text-[10px] text-slate-500">Crítico</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                            <div className="w-2 h-2 rounded-full bg-slate-300" />
-                            <span className="text-[10px] text-slate-500">Info</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            {/* Stats Dashboard & Action Breakdown */}
+            <AuditStatsDashboard stats={stats} logs={logs} />
 
             {/* Module Sections Navigation */}
             <div className="flex flex-wrap items-center gap-2 p-1.5 bg-slate-100/50 rounded-2xl w-fit">
@@ -1238,78 +433,19 @@ export const AuditView: React.FC = () => {
             </div>
 
             {/* Advanced Filters Panel */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 bg-white p-5 rounded-2xl shadow-sm border border-slate-100 items-end">
-                {/* Search */}
-                <div className="lg:col-span-4 space-y-1.5">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Búsqueda Inteligente</label>
-                    <div className="relative">
-                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <input
-                            type="text"
-                            placeholder="Nombre o RUT..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all"
-                        />
-                    </div>
-                </div>
-
-                {/* Filter Action */}
-                <div className="lg:col-span-3 space-y-1.5">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Tipo de Acción</label>
-                    <div className="relative">
-                        <Filter size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <select
-                            value={filterAction}
-                            onChange={(e) => setFilterAction(e.target.value as AuditAction | 'ALL')}
-                            className="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all cursor-pointer appearance-none"
-                        >
-                            <option value="ALL">Todas las acciones</option>
-                            {Object.entries(AUDIT_ACTION_LABELS).map(([key, label]) => (
-                                <option key={key} value={key}>{label}</option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
-
-                {/* RUT Search (Area 11) */}
-                <div className="lg:col-span-5 space-y-1.5">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Búsqueda por RUT (Trazabilidad)</label>
-                    <div className="relative">
-                        <History size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-cyan-600" />
-                        <input
-                            type="text"
-                            placeholder="Ingrese RUT para trazabilidad clínica (ej: 12.345.678-k)"
-                            value={searchRut}
-                            onChange={(e) => setSearchRut(e.target.value)}
-                            onFocus={() => setActiveSection('TRACEABILITY')}
-                            className="w-full pl-10 pr-4 py-2.5 text-sm bg-cyan-50/30 border border-cyan-100 rounded-xl focus:outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 transition-all font-mono"
-                        />
-                    </div>
-                </div>
-
-                {/* Range Picker */}
-                <div className="lg:col-span-12 mt-2 grid grid-cols-2 md:grid-cols-4 gap-4 items-end bg-slate-50/50 p-4 rounded-xl border border-slate-100">
-                    <div className="md:col-span-1 space-y-1.5">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Desde</label>
-                        <input
-                            type="date"
-                            value={startDate}
-                            onChange={(e) => setStartDate(e.target.value)}
-                            className="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all"
-                        />
-                    </div>
-                    <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Hasta</label>
-                        <input
-                            type="date"
-                            value={endDate}
-                            onChange={(e) => setEndDate(e.target.value)}
-                            className="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all"
-                        />
-                    </div>
-                </div>
-            </div>
+            <AuditFilters
+                searchTerm={searchTerm}
+                onSearchChange={setSearchTerm}
+                searchRut={searchRut}
+                onSearchRutChange={setSearchRut}
+                filterAction={filterAction}
+                onFilterActionChange={setFilterAction}
+                startDate={startDate}
+                onStartDateChange={setStartDate}
+                endDate={endDate}
+                onEndDateChange={setEndDate}
+                onFocusTraceability={() => setActiveSection('TRACEABILITY')}
+            />
 
             {/* Export Keys Panel - Special Section */}
             {
@@ -1438,7 +574,7 @@ export const AuditView: React.FC = () => {
             {/* Patient Traceability Mode (Area 11) */}
             {
                 activeSection === 'TRACEABILITY' && (
-                    <PatientTraceabilityComponent
+                    <PatientTraceability
                         logs={logs}
                         searchRut={searchRut}
                         onSelectPatient={setSearchRut}
@@ -1638,7 +774,7 @@ export const AuditView: React.FC = () => {
                                                         )}
                                                     </tr>
                                                     {/* Grouped Details (Area 6) */}
-                                                    {(log as any).isGroup && expandedRows.has(log.id) && (
+                                                    {(log as any as GroupedAuditLogEntry).isGroup && expandedRows.has(log.id) && (
                                                         <tr className="bg-amber-50/10">
                                                             <td colSpan={compactView ? 4 : 7} className="px-12 py-4 border-l-4 border-amber-500/30">
                                                                 <div className="space-y-3">
@@ -1647,7 +783,7 @@ export const AuditView: React.FC = () => {
                                                                         Detalle de acciones agrupadas
                                                                     </h5>
                                                                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                                                                        {(log as any).childLogs.map((child: AuditLogEntry) => (
+                                                                        {(log as any as GroupedAuditLogEntry).childLogs.map((child: AuditLogEntry) => (
                                                                             <div key={child.id} className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm flex flex-col gap-1 hover:border-amber-200 transition-colors">
                                                                                 <div className="flex items-center justify-between">
                                                                                     <span className="text-[10px] font-bold text-slate-400 font-mono">
@@ -1671,7 +807,7 @@ export const AuditView: React.FC = () => {
                                                     )}
 
                                                     {/* EXPANSIBLE DETAILS (Individual or first of group) */}
-                                                    {!(log as any).isGroup && expandedRows.has(log.id) && (
+                                                    {!(log as any as GroupedAuditLogEntry).isGroup && expandedRows.has(log.id) && (
                                                         <tr className="bg-slate-50/50">
                                                             <td colSpan={compactView ? 4 : 7} className="px-12 py-6 border-l-4 border-indigo-500/30">
                                                                 <div className="space-y-4">
@@ -1690,7 +826,7 @@ export const AuditView: React.FC = () => {
                                                                     </div>
 
                                                                     {/* Comparison / Diff View (NEW) */}
-                                                                    {(log.action.includes('MODIFIED') || (log.details?.changes as any)) && (
+                                                                    {(log.action.includes('MODIFIED') || log.details?.changes) && (
                                                                         <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
                                                                             <div className="bg-slate-50 px-4 py-2 border-b border-slate-200 flex items-center justify-between">
                                                                                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Comparación de Cambios</span>
@@ -1931,7 +1067,7 @@ export const AuditView: React.FC = () => {
                     </div>
                 )
             }
-        </div>
+        </div >
     );
 };
 

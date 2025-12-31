@@ -14,7 +14,7 @@ interface SignatureModeResult {
 
 export function useSignatureMode(
     navDateString: string,
-    user: any | null,
+    user: User | null,
     authLoading: boolean
 ): SignatureModeResult {
     // Parse URL params

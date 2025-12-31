@@ -17,9 +17,23 @@ vi.mock('@/services/factories/patientFactory', () => ({
 }));
 
 // Mock auditService
+const { mockLogPatientCleared } = vi.hoisted(() => ({
+    mockLogPatientCleared: vi.fn()
+}));
+
 vi.mock('@/services/admin/auditService', () => ({
-    logPatientCleared: vi.fn(),
+    logPatientCleared: mockLogPatientCleared,
     logAuditEvent: vi.fn()
+}));
+
+// Mock AuditContext to provide the same mock function
+vi.mock('@/context/AuditContext', () => ({
+    useAuditContext: () => ({
+        logPatientCleared: mockLogPatientCleared,
+        logEvent: vi.fn(),
+        logDebouncedEvent: vi.fn(),
+        userId: 'test-user-123'
+    })
 }));
 
 // Mock constants

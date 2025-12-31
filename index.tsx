@@ -8,6 +8,7 @@ import { AuthProvider } from '@/context/AuthContext';
 import { firebaseReady, mountConfigWarning } from '@/firebaseConfig';
 import { AuditProvider } from '@/context';
 import { queryClient } from '@/config/queryClient';
+import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -20,17 +21,19 @@ const renderApp = () => {
   console.log('[Index] 🚀 Rendering Application...');
   root.render(
     <React.StrictMode>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <UIProvider>
-            <DemoModeProvider>
-              <AuditProvider userId="anon">
-                <App />
-              </AuditProvider>
-            </DemoModeProvider>
-          </UIProvider>
-        </AuthProvider>
-      </QueryClientProvider>
+      <ErrorBoundary>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <UIProvider>
+              <DemoModeProvider>
+                <AuditProvider userId="anon">
+                  <App />
+                </AuditProvider>
+              </DemoModeProvider>
+            </UIProvider>
+          </AuthProvider>
+        </QueryClientProvider>
+      </ErrorBoundary>
     </React.StrictMode>
   );
 };

@@ -22,161 +22,20 @@ import {
     getAuditLogs as getIndexedDBAuditLogs,
     getAuditLogsForDate as getIndexedDBAuditLogsForDate
 } from '../storage/indexedDBService';
+import {
+    getCurrentUserEmail,
+    getCurrentUserDisplayName,
+    getCurrentUserUid,
+    getCachedIpAddress,
+    fetchAndCacheIpAddress
+} from './utils/auditUtils';
+import { generateSummary } from './utils/auditSummaryGenerator';
 
 // ============================================================================
-// User Identification (Improved)
+// Audit View - Policies & Throttling
 // ============================================================================
 
-const USER_EMAIL_CACHE_KEY = 'hhr_audit_user_email_cache';
-
-/**
- * Get current user email with robust fallbacks
- * Priority: auth.email → cached email → displayName → uid → anonymous
- */
-const getCurrentUserEmail = (): string => {
-    // Primary: Firebase Auth email
-    if (auth.currentUser?.email) {
-        // Cache it for future fallback
-        if (typeof localStorage !== 'undefined') {
-            localStorage.setItem(USER_EMAIL_CACHE_KEY, auth.currentUser.email);
-        }
-        return auth.currentUser.email;
-    }
-
-    // Fallback: Cached email from last successful auth
-    if (typeof localStorage !== 'undefined') {
-        const cached = localStorage.getItem(USER_EMAIL_CACHE_KEY);
-        if (cached) return cached;
-    }
-
-    // Fallback: displayName or UID
-    if (auth.currentUser?.displayName) return auth.currentUser.displayName;
-    if (auth.currentUser?.uid) return `uid:${auth.currentUser.uid.slice(0, 8)}...`;
-
-    return 'anonymous';
-};
-
-/**
- * Get user display name if available
- */
-const getCurrentUserDisplayName = (): string | undefined => {
-    return auth.currentUser?.displayName || undefined;
-};
-
-/**
- * Get Firebase UID
- */
-const getCurrentUserUid = (): string | undefined => {
-    return auth.currentUser?.uid || undefined;
-};
-
-// ============================================================================
-// IP Address Tracking
-// ============================================================================
-
-const IP_CACHE_KEY = 'hhr_audit_user_ip';
-let ipFetchInProgress = false;
-
-/**
- * Get user's IP address (cached in session)
- * Non-blocking - returns cached value or undefined
- */
-const getCachedIpAddress = (): string | undefined => {
-    if (typeof sessionStorage !== 'undefined') {
-        return sessionStorage.getItem(IP_CACHE_KEY) || undefined;
-    }
-    return undefined;
-};
-
-/**
- * Fetch and cache user's IP address (call once at login)
- */
-export const fetchAndCacheIpAddress = async (): Promise<string | undefined> => {
-    if (ipFetchInProgress) return getCachedIpAddress();
-
-    try {
-        ipFetchInProgress = true;
-        const response = await fetch('https://api.ipify.org?format=json', {
-            signal: AbortSignal.timeout(3000) // 3s timeout
-        });
-        const data = await response.json();
-        const ip = data.ip as string;
-
-        if (typeof sessionStorage !== 'undefined' && ip) {
-            sessionStorage.setItem(IP_CACHE_KEY, ip);
-        }
-        return ip;
-    } catch (error) {
-        console.warn('[Audit] Could not fetch IP address:', error);
-        return undefined;
-    } finally {
-        ipFetchInProgress = false;
-    }
-};
-
-// ============================================================================
-// Summary Generation
-// ============================================================================
-
-/**
- * Generate human-readable summary for audit entry
- */
-const generateSummary = (
-    action: AuditAction,
-    details: Record<string, unknown>,
-    entityId: string
-): string => {
-    const patientName = (details.patientName as string) || 'Paciente';
-    const bedId = (details.bedId as string) || entityId;
-
-    switch (action) {
-        case 'PATIENT_ADMITTED':
-            const dx = (details.pathology as string) ? ` [Dx: ${details.pathology}]` : '';
-            return `Ingreso: ${patientName}${dx} → Cama ${bedId}`;
-        case 'PATIENT_DISCHARGED':
-            return `Alta: ${patientName} (${(details.status as string) || 'Egreso'})`;
-        case 'PATIENT_TRANSFERRED':
-            return `Traslado: ${patientName} → ${(details.destination as string) || 'otro centro'}`;
-        case 'PATIENT_MODIFIED':
-            return `Datos actualizados: ${patientName}`;
-        case 'PATIENT_CLEARED':
-            return `Cama liberada: ${bedId}`;
-        case 'DAILY_RECORD_CREATED':
-            return `Registro creado: ${entityId}${details.copiedFrom ? ` (copiado de ${details.copiedFrom})` : ''}`;
-        case 'DAILY_RECORD_DELETED':
-            return `Registro eliminado: ${entityId}`;
-        case 'CUDYR_MODIFIED':
-            return `CUDYR modificado: ${patientName}`;
-        case 'NURSE_HANDOFF_MODIFIED':
-            return `Nota enfermería (${(details.shift as string) === 'day' ? 'Día' : 'Noche'})`;
-        case 'MEDICAL_HANDOFF_MODIFIED':
-            return `Evolución médica actualizada`;
-        case 'HANDOFF_NOVEDADES_MODIFIED':
-            return `Novedades actualizadas (${(details.shift as string) || 'turno'})`;
-        case 'VIEW_CUDYR':
-            return `Vista: Planilla CUDYR`;
-        case 'VIEW_NURSING_HANDOFF':
-            return `Vista: Entrega Enfermería`;
-        case 'VIEW_MEDICAL_HANDOFF':
-            return `Vista: Entrega Médica`;
-        case 'USER_LOGIN':
-            return `Inicio de sesión`;
-        case 'USER_LOGOUT':
-            return `Cierre de sesión${details.durationFormatted ? ` (${details.durationFormatted})` : ''}`;
-        case 'PATIENT_VIEWED':
-            return `Ficha visualizada: ${patientName}`;
-        case 'BED_BLOCKED':
-            return `Cama bloqueada: ${bedId}${details.reason ? ` (${details.reason})` : ''}`;
-        case 'BED_UNBLOCKED':
-            return `Cama desbloqueada: ${bedId}`;
-        case 'EXTRA_BED_TOGGLED':
-            return `${details.active ? 'Activada' : 'Desactivada'} cama extra: ${bedId}`;
-        case 'MEDICAL_HANDOFF_SIGNED':
-            return `Entrega médica firmada: ${(details.doctorName as string) || 'Médico'}`;
-        default:
-            return action;
-    }
-};
+// (Moved to utils/auditSummaryGenerator.ts)
 
 const HOSPITAL_ID = 'hanga_roa';
 const COLLECTION_NAME = 'auditLogs';

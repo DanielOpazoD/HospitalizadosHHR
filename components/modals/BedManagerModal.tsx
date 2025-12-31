@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Lock, BedDouble, CheckCircle } from 'lucide-react';
 import clsx from 'clsx';
 import { BEDS } from '../../constants';
@@ -37,8 +38,8 @@ const SubDialog = ({
   setError: (val: string | null) => void;
   showUnblock?: boolean;
   handleUnblock?: () => void;
-}) => (
-  <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+}) => createPortal(
+  <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
     <div className="bg-white border border-slate-200 shadow-2xl p-5 rounded-2xl w-full max-w-sm animate-scale-in">
       <h4 className="font-bold text-slate-800 mb-4 text-center tracking-tight">{title}</h4>
 
@@ -84,7 +85,8 @@ const SubDialog = ({
         )}
       </div>
     </div>
-  </div>
+  </div>,
+  document.body
 );
 
 export const BedManagerModal: React.FC<BedManagerModalProps> = ({

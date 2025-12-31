@@ -10,6 +10,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../config/queryClient';
 import { SyncStatus, UseDailyRecordSyncResult } from './useDailyRecordSync';
 import { DailyRecord } from '../types';
+import { DailyRecordPatchLoose } from './useDailyRecordTypes';
 
 export const useDailyRecordSyncQuery = (
     currentDateString: string,
@@ -48,11 +49,11 @@ export const useDailyRecordSyncQuery = (
         await saveMutation.mutateAsync(updatedRecord);
     }, [saveMutation]);
 
-    const patchRecord = useCallback(async (partial: any) => {
+    const patchRecord = useCallback(async (partial: DailyRecordPatchLoose) => {
         await patchMutation.mutateAsync(partial);
     }, [patchMutation]);
 
-    const setRecord = useCallback((updater: any) => {
+    const setRecord = useCallback((updater: DailyRecord | null | ((prev: DailyRecord | null) => DailyRecord | null)) => {
         const key = queryKeys.dailyRecord.byDate(currentDateString);
         queryClient.setQueryData(key, updater);
         queryClient.invalidateQueries({ queryKey: key });

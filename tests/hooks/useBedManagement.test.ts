@@ -209,6 +209,7 @@ describe('useBedManagement', () => {
                 'R1',
                 'New Admission',
                 emptyPatient.rut,
+                '', // pathology
                 record.date
             );
         });

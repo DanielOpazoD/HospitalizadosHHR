@@ -257,17 +257,17 @@ describe('Census → Excel Export Integration', () => {
         it('should generate correct filename format', () => {
             const filename = getCensusMasterFilename('2024-12-23');
 
-            // Format: "Censo Diario - Diciembre 2024 - Hospital Hanga Roa.xlsx"
+            // Format: "Censo diario HHR DD-MM-YYYY.xlsx"
             expect(filename).toContain('2024');
-            expect(filename).toContain('Hospital Hanga Roa');
+            expect(filename).toContain('HHR');
             expect(filename).toContain('.xlsx');
         });
 
-        it('should include month name in Spanish', () => {
+        it('should include date in DD-MM-YYYY format', () => {
             const filename = getCensusMasterFilename('2024-12-15');
 
-            // Should include "Diciembre" month name
-            expect(filename.toLowerCase()).toContain('diciembre');
+            // Should include "15-12-2024"
+            expect(filename).toContain('15-12-2024');
         });
     });
 

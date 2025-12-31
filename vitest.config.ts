@@ -19,8 +19,6 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: './tests/setup.ts',
-    // Default includes for unit and integration tests
-    include: ['tests/**/*.test.ts', 'tests/**/*.test.tsx'],
     // Exclude storybook stories from default test runner
     exclude: ['stories/**/*', 'node_modules/**/*'],
     coverage: {

@@ -33,6 +33,22 @@ vi.mock('../../services/storage/indexedDBService', () => ({
     getAuditLogsForDate: vi.fn()
 }));
 
+const { mockAuditUtils } = vi.hoisted(() => ({
+    mockAuditUtils: {
+        getCurrentUserEmail: vi.fn(() => 'tester@hospital.cl'),
+        getCurrentUserDisplayName: vi.fn(),
+        getCurrentUserUid: vi.fn(),
+        getCachedIpAddress: vi.fn(),
+        fetchAndCacheIpAddress: vi.fn()
+    }
+}));
+
+vi.mock('../../services/admin/utils/auditUtils', () => mockAuditUtils);
+
+vi.mock('../../services/admin/utils/auditSummaryGenerator', () => ({
+    generateSummary: vi.fn((action, details, entityId) => `Summary for ${action}`)
+}));
+
 const AUDIT_STORAGE_KEY = 'hanga_roa_audit_logs';
 
 describe('AuditService Coverage', () => {
@@ -70,11 +86,8 @@ describe('AuditService Coverage', () => {
     });
 
     it('should exclude view logging for specific emails', async () => {
-        // Setup: Mock current user as restricted email
-        Object.defineProperty(auth, 'currentUser', {
-            value: { email: 'daniel.opazo@hospitalhangaroa.cl' },
-            writable: true
-        });
+        // Setup: Mock current user as restricted email via mockAuditUtils
+        mockAuditUtils.getCurrentUserEmail.mockReturnValue('daniel.opazo@hospitalhangaroa.cl');
 
         // Act
         await auditService.logPatientView('B01', 'Patient', '11.111.111-1', '2024-01-01');
@@ -87,11 +100,8 @@ describe('AuditService Coverage', () => {
     });
 
     it('should log view access for non-excluded users', async () => {
-        // Setup: Normal user
-        Object.defineProperty(auth, 'currentUser', {
-            value: { email: 'random.doctor@hospital.cl' },
-            writable: true
-        });
+        // Setup: Normal user via mockAuditUtils
+        mockAuditUtils.getCurrentUserEmail.mockReturnValue('random.doctor@hospital.cl');
 
         // Act
         await auditService.logPatientView('B01', 'Patient', '11.111.111-1', '2024-01-01');

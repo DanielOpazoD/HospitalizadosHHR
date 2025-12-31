@@ -101,10 +101,10 @@ export const useHandoffLogic = ({
     const receivesList = useMemo(() => {
         if (!record) return [];
         // Day shift: nurses receiving are typically the night shift nurses
-        // Night shift: nurses receiving are typically the next day's nurses (not available, so empty or same)
+        // Night shift: nurses receiving are from the next day, so it should be empty
         const list = selectedShift === 'day'
             ? (record.nursesNightShift || [])
-            : (record.nursesDayShift || []); // or could be empty for night
+            : (record.handoffNightReceives || []);
         return list;
     }, [record, selectedShift]);
 

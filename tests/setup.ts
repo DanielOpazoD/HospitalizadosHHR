@@ -24,8 +24,8 @@ const mockUser = {
 const mockAuth = {
     currentUser: mockUser,
     onAuthStateChanged: vi.fn((callback: (user: typeof mockUser | null) => void) => {
-        // Immediately call the callback with mock user
-        setTimeout(() => callback(mockUser), 0);
+        // Immediately call the callback with mock user synchronously for deterministic tests
+        callback(mockUser);
         // Return unsubscribe function
         return vi.fn();
     }),
@@ -80,7 +80,7 @@ vi.mock('@/firebaseConfig', () => firebaseMock);
 vi.mock('firebase/auth', () => ({
     getAuth: vi.fn(() => mockAuth),
     onAuthStateChanged: vi.fn((auth, callback) => {
-        setTimeout(() => callback(mockUser), 0);
+        callback(mockUser);
         return vi.fn();
     }),
     signInWithEmailAndPassword: vi.fn().mockResolvedValue({ user: mockUser }),

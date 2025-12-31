@@ -24,6 +24,7 @@ vi.mock('../../context/UIContext', () => ({
 // Mock Audit Context
 vi.mock('../../context/AuditContext', () => ({
     useAuditContext: () => ({
+        logEvent: vi.fn(),
         logDebouncedEvent: vi.fn(),
         userId: 'test-user-123',
     }),

@@ -20,7 +20,7 @@ class HangaRoaDatabase extends Dexie {
     catalogs!: Table<{ id: string, list: string[], lastUpdated: string }>;
     errorLogs!: Table<ErrorLog>;
     auditLogs!: Table<AuditLogEntry>;
-    settings!: Table<{ id: string, value: any }>;
+    settings!: Table<{ id: string, value: unknown }>;
 
     constructor() {
         super('HangaRoaDB');
@@ -122,12 +122,15 @@ const ensureDbReady = async () => {
     isOpening = true;
     try {
         await db.open();
-    } catch (err: any) {
-        console.warn('[IndexedDB] ⚠️ Initial open failed, attempting auto-recovery:', err.name || err.message);
+    } catch (err: unknown) {
+        const errorName = err && typeof err === 'object' && 'name' in err ? String(err.name) : 'Unknown';
+        const errorMessage = err && typeof err === 'object' && 'message' in err ? String(err.message) : String(err);
+
+        console.warn('[IndexedDB] ⚠️ Initial open failed, attempting auto-recovery:', errorName || errorMessage);
 
         // If it's a known persistent error (like UnknownError or VersionError), 
         // try to delete and recreate the database once.
-        if (err.name === 'UnknownError' || err.name === 'VersionError') {
+        if (errorName === 'UnknownError' || errorName === 'VersionError') {
             try {
                 console.log('[IndexedDB] 🛠️ Deleting corrupted database for recreation...');
                 await db.close();
@@ -553,7 +556,7 @@ export const resetLocalDatabase = async () => {
 /**
  * Settings Store
  */
-export const saveSetting = async (id: string, value: any): Promise<void> => {
+export const saveSetting = async (id: string, value: unknown): Promise<void> => {
     try {
         await db.settings.put({ id, value });
     } catch (e) {

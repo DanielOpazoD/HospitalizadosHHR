@@ -26,11 +26,44 @@ export type AuditAction =
     | 'EXTRA_BED_TOGGLED'
     | 'MEDICAL_HANDOFF_SIGNED';
 
+// Specific detail interfaces for different actions
+export interface AuditDetailsPatient {
+    patientName?: string;
+    rut?: string;
+    bedId?: string;
+    pathology?: string;
+    diagnosis?: string;
+}
+
+export type AuditValue = string | number | boolean | null | undefined | string[];
+
+export interface AuditDetailsChange {
+    field?: string;
+    value?: AuditValue;
+    oldValue?: AuditValue;
+    newValue?: AuditValue;
+    changes?: Record<string, { old: AuditValue; new: AuditValue }>;
+}
+
+export interface AuditDetailsHandoff {
+    shift?: 'day' | 'night' | string;
+    doctorName?: string;
+    authorName?: string;
+}
+
+export interface AuditDetailsBed {
+    bedId?: string;
+    reason?: string;
+    active?: boolean;
+}
+
+export type AuditDetails = AuditDetailsPatient & AuditDetailsChange & AuditDetailsHandoff & AuditDetailsBed & Record<string, unknown>;
+
 export interface AuditLogEntry {
     id: string;
     timestamp: string;          // ISO 8601
 
-    // User identification (improved)
+    // User identification
     userId: string;             // email del usuario (primary)
     userDisplayName?: string;   // Nombre visible (ej: "Daniel Opazo")
     userUid?: string;           // Firebase UID (técnico)
@@ -41,14 +74,19 @@ export interface AuditLogEntry {
     entityType: 'patient' | 'discharge' | 'transfer' | 'dailyRecord' | 'user';
     entityId: string;           // bedId, recordId, etc.
 
-    // Human-readable summary (NEW)
+    // Human-readable summary
     summary?: string;           // "Ingresó a Juan Pérez en cama R2"
 
-    // Technical details (hidden by default in UI)
-    details: Record<string, unknown>;  // datos específicos de la acción
+    // Technical details
+    details: AuditDetails;
     patientIdentifier?: string; // RUT enmascarado (ej: 12.345.***-K)
     recordDate?: string;        // fecha del registro afectado
-    authors?: string;           // Identificación de autores reales (para cuentas compartidas)
+    authors?: string;           // Identificación de autores reales
+}
+
+export interface GroupedAuditLogEntry extends AuditLogEntry {
+    isGroup: true;
+    childLogs: AuditLogEntry[];
 }
 
 /**
