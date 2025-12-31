@@ -211,32 +211,34 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
                 />
             )}
 
-            {/* Clinical Checklists & Staff (Monitor view + Print) */}
+            {/* Compact Staff & Checklist Section (Monitor view) */}
             {!isMedical && (
-                <div className="flex flex-col gap-4">
-                    {/* Top Row: Staff Selectors (Side by Side) - HIDDEN IN PRINT */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 print:hidden">
+                <div className="bg-white rounded-lg border border-slate-200 p-2 print:hidden">
+                    {/* Staff Selectors - Compact horizontal layout */}
+                    <div className="flex flex-wrap gap-x-6 gap-y-2 items-center mb-2 pb-2 border-b border-slate-100">
                         <HandoffStaffSelector
                             label="Entrega"
                             type="delivers"
-                            bgClass="bg-white"
+                            bgClass=""
                             selectedNurses={deliversList}
                             availableNurses={nursesList}
                             onUpdate={(list) => updateHandoffStaff(selectedShift, 'delivers', list)}
                             readOnly={readOnly}
+                            compact
                         />
                         <HandoffStaffSelector
                             label="Recibe"
                             type="receives"
-                            bgClass="bg-white"
+                            bgClass=""
                             selectedNurses={receivesList}
                             availableNurses={nursesList}
                             onUpdate={(list) => updateHandoffStaff(selectedShift, 'receives', list)}
                             readOnly={readOnly}
+                            compact
                         />
                     </div>
 
-                    {/* Bottom Row: Checklist */}
+                    {/* Checklist - inline with minimal styling */}
                     <div>
                         {selectedShift === 'day' ? (
                             <HandoffChecklistDay

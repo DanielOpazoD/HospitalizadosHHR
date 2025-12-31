@@ -66,65 +66,63 @@ const ChecklistItem: React.FC<{
 
 export const HandoffChecklistNight: React.FC<HandoffChecklistNightProps> = ({ data = {}, onUpdate, readOnly = false }) => {
     return (
-        <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 print:bg-transparent print:border-none print:p-0">
-            <h3 className="text-slate-800 font-bold text-xs mb-2 flex items-center gap-2 print:text-black print:text-[9px] print:mb-1">
-                <ClipboardList size={14} className="text-slate-600 print:w-3 print:h-3" />
-                Checklist Turno Noche
-            </h3>
-            <div className="flex gap-x-4 gap-y-2 flex-wrap items-center print:gap-x-3 print:gap-y-1">
-                <ChecklistItem
-                    checked={!!data.estadistica}
-                    onChange={(checked) => onUpdate('estadistica', checked)}
-                    label="Estadística"
-                    disabled={readOnly}
-                />
-                <ChecklistItem
-                    checked={!!data.categorizacionCudyr}
-                    onChange={(checked) => onUpdate('categorizacionCudyr', checked)}
-                    label="Categorización CUDYR"
-                    disabled={readOnly}
-                />
-                <ChecklistItem
-                    checked={!!data.encuestaUTI}
-                    onChange={(checked) => onUpdate('encuestaUTI', checked)}
-                    label="Encuesta camas UTI"
-                    disabled={readOnly}
-                />
-                <ChecklistItem
-                    checked={!!data.encuestaMedias}
-                    onChange={(checked) => onUpdate('encuestaMedias', checked)}
-                    label="Encuesta camas Medias"
-                    disabled={readOnly}
-                />
-                <ChecklistItem
-                    checked={!!data.conteoMedicamento}
-                    onChange={(checked) => onUpdate('conteoMedicamento', checked)}
-                    label="Conteo fármacos controlados"
-                    disabled={readOnly}
-                />
+        <div className="flex flex-wrap items-center gap-4 print:gap-3 print:bg-transparent print:border-none print:p-0">
+            <div className="flex items-center gap-2 text-slate-700">
+                <ClipboardList size={14} className="print:w-3 print:h-3" />
+                <span className="text-xs font-bold uppercase print:text-black print:text-[9px]">Checklist TN</span>
+            </div>
+            <ChecklistItem
+                checked={!!data.estadistica}
+                onChange={(checked) => onUpdate('estadistica', checked)}
+                label="Estadística"
+                disabled={readOnly}
+            />
+            <ChecklistItem
+                checked={!!data.categorizacionCudyr}
+                onChange={(checked) => onUpdate('categorizacionCudyr', checked)}
+                label="Categorización CUDYR"
+                disabled={readOnly}
+            />
+            <ChecklistItem
+                checked={!!data.encuestaUTI}
+                onChange={(checked) => onUpdate('encuestaUTI', checked)}
+                label="Encuesta camas UTI"
+                disabled={readOnly}
+            />
+            <ChecklistItem
+                checked={!!data.encuestaMedias}
+                onChange={(checked) => onUpdate('encuestaMedias', checked)}
+                label="Encuesta camas Medias"
+                disabled={readOnly}
+            />
+            <ChecklistItem
+                checked={!!data.conteoMedicamento}
+                onChange={(checked) => onUpdate('conteoMedicamento', checked)}
+                label="Conteo fármacos controlados"
+                disabled={readOnly}
+            />
 
-                {/* Conteo Fármacos NO Controlados + Fecha */}
-                <div className="flex items-center gap-2 print:gap-1">
-                    <ChecklistItem
-                        checked={!!data.conteoNoControlados}
-                        onChange={(checked) => onUpdate('conteoNoControlados', checked)}
-                        label="Conteo fármacos no-controlados"
+            {/* Conteo Fármacos NO Controlados + Fecha */}
+            <div className="flex items-center gap-2 print:gap-1">
+                <ChecklistItem
+                    checked={!!data.conteoNoControlados}
+                    onChange={(checked) => onUpdate('conteoNoControlados', checked)}
+                    label="Conteo fármacos no-controlados"
+                    disabled={readOnly}
+                />
+                <div className="flex items-center gap-1 print:gap-0.5">
+                    <span className="text-[10px] font-semibold text-slate-500 uppercase print:text-[7px] print:text-black">Próx:</span>
+                    <input
+                        type="date"
+                        value={data.conteoNoControladosProximaFecha || ''}
+                        onChange={(e) => onUpdate('conteoNoControladosProximaFecha', e.target.value)}
+                        className="text-xs p-1 border border-slate-200 rounded text-slate-700 focus:ring-1 focus:ring-slate-400 focus:outline-none w-24 print:hidden"
                         disabled={readOnly}
                     />
-                    <div className="flex items-center gap-1 print:gap-0.5">
-                        <span className="text-[10px] font-semibold text-slate-500 uppercase print:text-[7px] print:text-black">Próx:</span>
-                        <input
-                            type="date"
-                            value={data.conteoNoControladosProximaFecha || ''}
-                            onChange={(e) => onUpdate('conteoNoControladosProximaFecha', e.target.value)}
-                            className="text-xs p-1 border border-slate-200 rounded text-slate-700 focus:ring-1 focus:ring-slate-400 focus:outline-none w-24 print:hidden"
-                            disabled={readOnly}
-                        />
-                        {/* Print-only: show date as text without calendar icon */}
-                        <span className="hidden print:inline print:text-[8px] print:text-black">
-                            {data.conteoNoControladosProximaFecha || '-'}
-                        </span>
-                    </div>
+                    {/* Print-only: show date as text without calendar icon */}
+                    <span className="hidden print:inline print:text-[8px] print:text-black">
+                        {data.conteoNoControladosProximaFecha || '-'}
+                    </span>
                 </div>
             </div>
         </div>

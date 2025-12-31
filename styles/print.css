@@ -1,7 +1,15 @@
 @media print {
   @page {
-    margin: 10mm 10mm 10mm 10mm;
+    margin: 10mm 10mm 15mm 10mm;
     background: white;
+
+    /* Page numbering in bottom right */
+    @bottom-right {
+      content: "Página " counter(page) " de " counter(pages);
+      font-size: 9px;
+      font-family: system-ui, -apple-system, sans-serif;
+      color: #64748b;
+    }
   }
 
   /* Force white background on root elements and use system fonts */

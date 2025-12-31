@@ -72,34 +72,32 @@ const ChecklistItem: React.FC<{
 
 export const HandoffChecklistDay: React.FC<HandoffChecklistDayProps> = ({ data = {}, onUpdate, readOnly = false }) => {
     return (
-        <div className="bg-sky-50/50 border border-sky-100 rounded-lg p-3 print:bg-transparent print:border-none print:p-0">
-            <h3 className="text-sky-700 font-bold text-xs mb-2 flex items-center gap-2 print:text-black print:text-[9px] print:mb-1">
+        <div className="flex flex-wrap items-center gap-4 print:gap-3 print:bg-transparent print:border-none print:p-0">
+            <div className="flex items-center gap-2 text-sky-700">
                 <ClipboardCheck size={14} className="print:w-3 print:h-3" />
-                Checklist Turno Largo
-            </h3>
-            <div className="flex gap-4 flex-wrap print:gap-3">
-                <ChecklistItem
-                    checked={!!data.escalaBraden}
-                    onChange={(checked) => onUpdate('escalaBraden', checked)}
-                    label="Escala Braden"
-                    disabled={readOnly}
-                    colorScheme="sky"
-                />
-                <ChecklistItem
-                    checked={!!data.escalaRiesgoCaidas}
-                    onChange={(checked) => onUpdate('escalaRiesgoCaidas', checked)}
-                    label="Escala Riesgo Caídas"
-                    disabled={readOnly}
-                    colorScheme="sky"
-                />
-                <ChecklistItem
-                    checked={!!data.escalaRiesgoLPP}
-                    onChange={(checked) => onUpdate('escalaRiesgoLPP', checked)}
-                    label="Evaluación LPP"
-                    disabled={readOnly}
-                    colorScheme="sky"
-                />
+                <span className="text-xs font-bold uppercase print:text-black print:text-[9px]">Checklist TL</span>
             </div>
+            <ChecklistItem
+                checked={!!data.escalaBraden}
+                onChange={(checked) => onUpdate('escalaBraden', checked)}
+                label="Escala Braden"
+                disabled={readOnly}
+                colorScheme="sky"
+            />
+            <ChecklistItem
+                checked={!!data.escalaRiesgoCaidas}
+                onChange={(checked) => onUpdate('escalaRiesgoCaidas', checked)}
+                label="Escala Riesgo Caídas"
+                disabled={readOnly}
+                colorScheme="sky"
+            />
+            <ChecklistItem
+                checked={!!data.escalaRiesgoLPP}
+                onChange={(checked) => onUpdate('escalaRiesgoLPP', checked)}
+                label="Evaluación LPP"
+                disabled={readOnly}
+                colorScheme="sky"
+            />
         </div>
     );
 };
