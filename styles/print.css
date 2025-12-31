@@ -27,6 +27,15 @@
     text-shadow: none !important;
     filter: none !important;
     backdrop-filter: none !important;
+    list-style: none !important;
+    list-style-type: none !important;
+  }
+
+  /* Force hide all list markers */
+  *::marker {
+    content: none !important;
+    display: none !important;
+    font-size: 0 !important;
   }
 
   /* Hide common decorative elements */
@@ -58,5 +67,18 @@
   th {
     page-break-inside: avoid;
     break-inside: avoid;
+  }
+
+  /* Hide empty elements that might render as orphan bullets */
+  div:empty,
+  span:empty,
+  p:empty {
+    display: none !important;
+  }
+
+  /* Force hide any element that only contains a space-y gap marker */
+  .space-y-3>*:last-child:empty,
+  .space-y-2>*:last-child:empty {
+    display: none !important;
   }
 }

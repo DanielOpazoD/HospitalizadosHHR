@@ -7,6 +7,32 @@ interface HandoffNovedadesProps {
     onChange: (val: string) => void;
 }
 
+/**
+ * Sanitizes text for print output by removing invisible characters,
+ * replacement characters, box symbols, and trimming trailing whitespace.
+ */
+const sanitizeForPrint = (text: string): string => {
+    if (!text) return '';
+    return text
+        // Remove zero-width characters
+        .replace(/[\u200B-\u200D\uFEFF]/g, '')
+        // Remove replacement character (often renders as ■)
+        .replace(/\uFFFD/g, '')
+        // Remove black square and similar box/bullet characters
+        .replace(/[\u25A0-\u25FF]/g, '')  // Geometric shapes block (■ ● ○ etc)
+        .replace(/[\u2022\u2023\u2043\u204C\u204D]/g, '')  // Various bullet characters
+        // Remove other common invisible control characters
+        .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '')
+        // Normalize line endings
+        .replace(/\r\n/g, '\n')
+        .replace(/\r/g, '\n')
+        // Trim trailing whitespace from each line and the whole text
+        .split('\n')
+        .map(line => line.trimEnd())
+        .join('\n')
+        .trimEnd();
+};
+
 export const HandoffNovedades: React.FC<HandoffNovedadesProps> = ({ value, onChange }) => {
     return (
         <div className="bg-white border border-slate-200 rounded-lg p-4 mt-4 print:border-none print:p-0 print:mt-2 print:bg-transparent">
@@ -26,9 +52,9 @@ export const HandoffNovedades: React.FC<HandoffNovedadesProps> = ({ value, onCha
                 />
             </div>
 
-            {/* Print: Full Content Div */}
+            {/* Print: Sanitized Full Content Div */}
             <div className="hidden print:block whitespace-pre-wrap break-words text-slate-800 text-sm print:text-[9px] print:leading-snug print:list-none">
-                {value || <span className="italic text-slate-400">Sin novedades registradas.</span>}
+                {sanitizeForPrint(value) || <span className="italic text-slate-400">Sin novedades registradas.</span>}
             </div>
         </div>
     );

@@ -126,7 +126,7 @@ export const CudyrView: React.FC<CudyrViewProps> = ({ readOnly = false }) => {
                 </div>
 
                 <div className="overflow-x-auto print:overflow-visible">
-                    <table className="w-full text-left text-xs border-collapse border border-slate-300 table-fixed min-w-[720px] print:table-auto print:min-w-0 print:text-[7px]">
+                    <table className="w-full text-left text-xs border-collapse border border-slate-300 min-w-[900px] print:table-auto print:min-w-0 print:text-[7px]">
                         <thead>
                             {/* Group Headers */}
                             <tr>
@@ -141,7 +141,7 @@ export const CudyrView: React.FC<CudyrViewProps> = ({ readOnly = false }) => {
                             <tr className="text-center">
                                 {/* Fixed */}
                                 <th className="border border-slate-300 p-1 w-10 bg-slate-50 align-middle print:w-auto">CAMA</th>
-                                <th className="border border-slate-300 p-1 w-44 bg-slate-50 align-middle print:w-[88px] print:max-w-[88px]">
+                                <th className="border border-slate-300 p-1 w-[100px] max-w-[100px] bg-slate-50 align-middle print:w-[88px] print:max-w-[88px]">
                                     <span className="print:hidden">NOMBRE</span>
                                     <span className="hidden print:inline">RUT</span>
                                 </th>
