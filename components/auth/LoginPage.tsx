@@ -180,7 +180,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                         </div>
                     )}
 
-                    {/* Passport Offline Access - Minimal Icon */}
+                    {/* Passport Offline Access - HIDDEN
                     <div className="mt-10 flex flex-col items-center">
                         <div
                             onDrop={handleDrop}
@@ -211,6 +211,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                         </div>
                         <p className="mt-2 text-[10px] text-slate-400 font-medium">MODO OFFLINE</p>
                     </div>
+                    */}
                 </div>
 
                 {/* Version/Footer */}
