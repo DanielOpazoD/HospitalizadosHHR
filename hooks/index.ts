@@ -55,3 +55,5 @@ export type { BedOperationsActions } from './useBedOperations';
 // Feature Flags
 export { useFeatureFlag, useAllFeatureFlags } from './useFeatureFlag';
 
+// Version Check (auto-refresh on new deployments)
+export { useVersionCheck } from './useVersionCheck';

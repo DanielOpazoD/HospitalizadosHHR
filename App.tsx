@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { useDailyRecord, useDateNavigation, useFileOperations, useExistingDays, useCensusEmail, useSignatureMode, useAppState } from '@/hooks';
+import { useDailyRecord, useDateNavigation, useFileOperations, useExistingDays, useCensusEmail, useSignatureMode, useAppState, useVersionCheck } from '@/hooks';
 import { UseDateNavigationReturn } from '@/hooks/useDateNavigation';
 import { useAuth, AuthContextType } from '@/context/AuthContext';
 import { useStorageMigration } from '@/hooks/useStorageMigration';
@@ -55,6 +55,9 @@ const useNurseSignature = (record: ReturnType<typeof useDailyRecord>['record']) 
 function App() {
   // Storage migration (runs once on startup)
   useStorageMigration();
+
+  // Version check (auto-refresh on new deployments)
+  useVersionCheck();
 
   // Auth state
   const auth = useAuth();

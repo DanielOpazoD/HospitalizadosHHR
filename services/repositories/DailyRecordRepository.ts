@@ -67,6 +67,7 @@ export interface IDailyRecordRepository {
     subscribe(date: string, callback: (r: DailyRecord | null, hasPendingWrites: boolean) => void): () => void;
     initializeDay(date: string, copyFromDate?: string): Promise<DailyRecord>;
     deleteDay(date: string): Promise<void>;
+    getAllDates(): Promise<string[]>;
 }
 
 // ============================================================================
@@ -77,16 +78,37 @@ export interface IDailyRecordRepository {
 
 /**
  * Retrieves the daily record for a specific date.
+ * First tries IndexedDB (fast), then syncs from Firestore if online and local is empty.
  * 
  * @param date - Date in YYYY-MM-DD format
+ * @param syncFromRemote - If true, also check Firestore when local is empty
  * @returns The daily record if it exists, null otherwise
  */
-export const getForDate = async (date: string): Promise<DailyRecord | null> => {
+export const getForDate = async (date: string, syncFromRemote: boolean = true): Promise<DailyRecord | null> => {
     if (demoModeActive) {
         return await getDemoRecordForDate(date);
     }
-    return getRecordFromIndexedDB(date);
+
+    // 1. Try local first (fast)
+    const localRecord = await getRecordFromIndexedDB(date);
+
+    // 2. If no local record and sync is enabled, try Firestore
+    if (!localRecord && syncFromRemote && firestoreEnabled) {
+        try {
+            const remoteRecord = await getRecordFromFirestore(date);
+            if (remoteRecord) {
+                // Cache it locally for next time
+                await saveToIndexedDB(remoteRecord);
+                return remoteRecord;
+            }
+        } catch (err) {
+            console.warn(`[Repository] getForDate: Firestore fallback failed for ${date}:`, err);
+        }
+    }
+
+    return localRecord;
 };
+
 
 /**
  * Retrieves the previous day's record relative to the given date.
@@ -446,7 +468,8 @@ export const DailyRecordRepository: IDailyRecordRepository & { syncWithFirestore
     subscribe,
     initializeDay,
     deleteDay,
-    syncWithFirestore
+    syncWithFirestore,
+    getAllDates: getAllDatesFromIndexedDB
 };
 
 export const CatalogRepository = {

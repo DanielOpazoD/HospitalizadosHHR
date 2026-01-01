@@ -1,9 +1,43 @@
 import path from 'path';
-import { defineConfig, loadEnv } from 'vite';
+import fs from 'fs';
+import { defineConfig, loadEnv, Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import viteCompression from 'vite-plugin-compression';
 import { VitePWA } from 'vite-plugin-pwa';
+
+/**
+ * Custom plugin to generate version.json on each build.
+ * This enables automatic cache invalidation when deploying new versions.
+ */
+function versionPlugin(): Plugin {
+  return {
+    name: 'version-plugin',
+    buildStart() {
+      const version = Date.now().toString();
+      const versionInfo = {
+        version,
+        buildDate: new Date().toISOString(),
+      };
+
+      // Ensure public directory exists
+      const publicDir = path.resolve(__dirname, 'public');
+      if (!fs.existsSync(publicDir)) {
+        fs.mkdirSync(publicDir, { recursive: true });
+      }
+
+      // Write version.json
+      fs.writeFileSync(
+        path.resolve(publicDir, 'version.json'),
+        JSON.stringify(versionInfo, null, 2)
+      );
+
+      console.log(`[versionPlugin] Generated version.json: ${version}`);
+    }
+  };
+}
+
+
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
@@ -15,6 +49,7 @@ export default defineConfig(({ mode }) => {
       host: '0.0.0.0',
     },
     plugins: [
+      versionPlugin(),
       react(),
       tailwindcss(),
       // PWA plugin configuration

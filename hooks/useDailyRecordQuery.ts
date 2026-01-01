@@ -59,8 +59,26 @@ export const useDailyRecordQuery = (
         return () => unsubscribe();
     }, [date, queryClient]);
 
+    // Prefetch previous day for faster "copy from previous" functionality
+    useEffect(() => {
+        if (!date) return;
+
+        // Calculate previous day
+        const currentDate = new Date(date + 'T12:00:00'); // Noon to avoid timezone issues
+        currentDate.setDate(currentDate.getDate() - 1);
+        const prevDate = currentDate.toISOString().split('T')[0];
+
+        // Prefetch in background (low priority)
+        queryClient.prefetchQuery({
+            queryKey: queryKeys.dailyRecord.byDate(prevDate),
+            queryFn: () => getForDate(prevDate),
+            staleTime: 5 * 60 * 1000, // Consider fresh for 5 minutes
+        });
+    }, [date, queryClient]);
+
     return query;
 };
+
 
 /**
  * Hook for saving/updating a daily record.
