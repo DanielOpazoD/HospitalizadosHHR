@@ -1,8 +1,7 @@
 import React, { useRef, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Settings, Cloud, RefreshCw, AlertTriangle, Database, FileSpreadsheet, Send, Printer, Lock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Settings, FileSpreadsheet, Send, Printer, Lock } from 'lucide-react';
 import clsx from 'clsx';
 import { MONTH_NAMES } from '../../constants';
-import { useDemoMode } from '../../context/DemoModeContext';
 
 // ============================================================================
 // Grouped Props Interfaces
@@ -76,12 +75,11 @@ export const DateStrip: React.FC<DateStripProps> = ({
     onSendEmail,
     emailStatus = 'idle',
     emailErrorMessage,
-    // Sync
-    syncStatus,
-    lastSyncTime
+    // Sync (no longer displayed here, shown in Navbar instead)
+    syncStatus: _syncStatus,
+    lastSyncTime: _lastSyncTime
 }) => {
     const daysContainerRef = useRef<HTMLDivElement>(null);
-    const { isActive: isDemoMode } = useDemoMode();
 
     const changeMonth = (delta: number) => {
         let newM = selectedMonth + delta;
@@ -287,30 +285,6 @@ export const DateStrip: React.FC<DateStripProps> = ({
 
                     {/* Right Side Actions */}
                     <div className="flex items-center gap-2 shrink-0">
-
-                        {/* Sync Status - Always Visible */}
-                        <div className="flex items-center gap-1 text-[10px] font-medium"
-                            title={
-                                isDemoMode
-                                    ? `Modo Demo - Guardado local: ${lastSyncTime?.toLocaleTimeString() || '...'}`
-                                    : syncStatus === 'error'
-                                        ? 'Error de conexión con Firebase'
-                                        : `Conectado a Firebase: ${lastSyncTime?.toLocaleTimeString() || 'Esperando...'}`
-                            }>
-                            {syncStatus === 'saving' && <RefreshCw size={12} className="animate-spin text-blue-500" />}
-                            {syncStatus === 'saved' && (
-                                isDemoMode
-                                    ? <div className="flex items-center gap-1 text-amber-600"><Database size={12} /> <span>LOCAL</span></div>
-                                    : <Cloud size={12} className="text-green-500" />
-                            )}
-                            {syncStatus === 'error' && <AlertTriangle size={12} className="text-red-500" />}
-                            {(!syncStatus || syncStatus === 'idle') && (
-                                isDemoMode
-                                    ? <div className="flex items-center gap-1 text-amber-500"><Database size={12} /></div>
-                                    : <Cloud size={12} className="text-slate-300" />
-                            )}
-                        </div>
-
                         {/* Bed Manager Button */}
                         {onOpenBedManager && (
                             <button

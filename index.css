@@ -148,6 +148,72 @@
     animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* Toast slide-in animation */
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.animate-slide-in-right {
+    animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Success check bounce animation */
+@keyframes bounceOnce {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.2);
+    }
+}
+
+.animate-bounce-once {
+    animation: bounceOnce 0.4s ease-out;
+}
+
+/* Button click ripple effect */
+@keyframes ripple {
+    from {
+        opacity: 0.5;
+        transform: scale(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: scale(2.5);
+    }
+}
+
+.btn-ripple {
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-ripple::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, transparent 70%);
+    opacity: 0;
+    transform: scale(0);
+    pointer-events: none;
+}
+
+.btn-ripple:active::after {
+    animation: ripple 0.4s ease-out;
+}
+
 .handoff-cudyr-print {
     display: none;
 }

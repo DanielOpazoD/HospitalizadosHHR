@@ -13,8 +13,9 @@ import { NavbarMenu } from './NavbarMenu';
 import { NavbarTabs } from './NavbarTabs';
 import { UserMenu } from './UserMenu';
 import { DemoModeBadge } from './DemoModeBadge';
+import { SyncStatusIndicator } from './SyncStatusIndicator';
 
-export type ModuleType = 'CENSUS' | 'CUDYR' | 'NURSING_HANDOFF' | 'MEDICAL_HANDOFF' | 'REPORTS' | 'AUDIT' | 'WHATSAPP' | 'ERRORS';
+export type ModuleType = 'CENSUS' | 'CUDYR' | 'NURSING_HANDOFF' | 'MEDICAL_HANDOFF' | 'AUDIT' | 'WHATSAPP' | 'ERRORS';
 type ViewMode = 'REGISTER' | 'ANALYTICS';
 
 interface NavbarProps {
@@ -70,7 +71,6 @@ export const Navbar: React.FC<NavbarProps> = ({
       case 'CUDYR': return 'bg-slate-500 shadow-slate-500/20';
       case 'NURSING_HANDOFF': return 'bg-sky-600 shadow-sky-600/20';
       case 'MEDICAL_HANDOFF': return 'bg-sky-600 shadow-sky-600/20';
-      case 'REPORTS': return 'bg-slate-700 shadow-slate-700/20';
       case 'AUDIT': return 'bg-slate-800 shadow-slate-800/20';
       case 'WHATSAPP': return 'bg-green-700 shadow-green-700/20';
       case 'ERRORS': return 'bg-slate-900 shadow-slate-900/20';
@@ -119,6 +119,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* Status Indicators & User Menu */}
         <div className="flex items-center gap-4 py-2">
           <div className="flex items-center gap-3">
+            <SyncStatusIndicator />
             <DemoModeBadge />
 
             {!isFirebaseConnected && (
