@@ -338,7 +338,7 @@ export const HandoffView: React.FC<HandoffViewProps> = ({ type = 'nursing', read
             <div className="hidden print:block print:h-4" aria-hidden="true" />{/* Print-only spacer */}
 
             {/* Additional Sections for Nursing Handoff (Altas, Traslados, CMA) */}
-            {!isMedical && <MovementsSummary record={record} />}
+            {!isMedical && <MovementsSummary record={record} selectedShift={selectedShift} />}
 
             {/* Novedades Section */}
             {!isMedical && (

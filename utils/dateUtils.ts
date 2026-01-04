@@ -263,3 +263,75 @@ export const getShiftSchedule = (dateString: string): ShiftSchedule => {
     };
 };
 
+/**
+ * Determines if a given time (HH:MM) falls within the day shift (Turno Largo)
+ * Day shift: 08:00 - 20:00
+ * Night shift: 20:00 - 08:00
+ * 
+ * @param time - Time string in HH:MM format
+ * @returns true if the time is within day shift, false for night shift
+ *          Returns true if time is undefined for backwards compatibility
+ */
+export const isWithinDayShift = (time?: string): boolean => {
+    if (!time) return true; // Default to day shift for backwards compatibility
+    const [hours] = time.split(':').map(Number);
+    if (isNaN(hours)) return true; // Invalid time format, assume day shift
+    return hours >= 8 && hours < 20;
+};
+
+/**
+ * Determines if a patient was admitted during a specific shift.
+ * 
+ * IMPORTANT: Night shift spans two calendar days!
+ * - Night shift of Jan 3rd = Jan 3rd 20:00 → Jan 4th 08:00
+ * - A patient admitted on Jan 4th at 02:00 belongs to the night shift of Jan 3rd
+ * 
+ * @param recordDate - The date of the DailyRecord (YYYY-MM-DD)
+ * @param admissionDate - The patient's admission date (YYYY-MM-DD)
+ * @param admissionTime - The patient's admission time (HH:MM)
+ * @param shift - The selected shift ('day' or 'night')
+ * @returns true if the patient should be visible in the selected shift
+ */
+export const isAdmittedDuringShift = (
+    recordDate: string,
+    admissionDate?: string,
+    admissionTime?: string,
+    shift: 'day' | 'night' = 'day'
+): boolean => {
+    // If no admission date, use record date (backwards compatibility)
+    const patientAdmissionDate = admissionDate || recordDate;
+
+    // Calculate next day from record date for night shift cross-day logic
+    const nextDay = getNextDay(recordDate);
+
+    // Determine if admission time is during day shift (08:00-20:00)
+    const isDayTime = isWithinDayShift(admissionTime);
+
+    if (shift === 'day') {
+        // Day shift: Only include patients admitted on the same date AND during day hours
+        // OR patients admitted on earlier dates (already hospitalized)
+        if (patientAdmissionDate < recordDate) {
+            return true; // Already hospitalized before this record date
+        }
+        if (patientAdmissionDate === recordDate && isDayTime) {
+            return true; // Admitted on the same day during day shift
+        }
+        return false; // Admitted at night or on a future date
+    } else {
+        // Night shift: Include all patients from day shift PLUS:
+        // 1. Patients admitted on record date during night hours (after 20:00)
+        // 2. Patients admitted on the NEXT day during early morning (before 08:00)
+
+        if (patientAdmissionDate < recordDate) {
+            return true; // Already hospitalized before this record date
+        }
+        if (patientAdmissionDate === recordDate) {
+            return true; // Admitted on the same day (any time - day shift already ended)
+        }
+        if (patientAdmissionDate === nextDay && !isDayTime) {
+            // Admitted on next day during early morning (part of this night shift)
+            return true;
+        }
+        return false; // Admitted on a future date beyond the next morning
+    }
+};

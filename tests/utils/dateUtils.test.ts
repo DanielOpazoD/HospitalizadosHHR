@@ -8,7 +8,9 @@ import {
     isFutureDate,
     parseISODate,
     isBusinessDay,
-    getShiftSchedule
+    getShiftSchedule,
+    isWithinDayShift,
+    isAdmittedDuringShift
 } from '../../utils/dateUtils';
 
 describe('dateUtils', () => {
@@ -152,6 +154,86 @@ describe('dateUtils', () => {
             const schedule = getShiftSchedule('2024-12-29');
             expect(schedule.nightEnd).toBe('08:00');
             expect(schedule.description).toContain('→ Día Hábil');
+        });
+    });
+
+    describe('isWithinDayShift', () => {
+        it('should return true for times during day shift (08:00-20:00)', () => {
+            expect(isWithinDayShift('08:00')).toBe(true);
+            expect(isWithinDayShift('12:00')).toBe(true);
+            expect(isWithinDayShift('19:59')).toBe(true);
+        });
+
+        it('should return false for times during night shift (20:00-08:00)', () => {
+            expect(isWithinDayShift('20:00')).toBe(false);
+            expect(isWithinDayShift('22:00')).toBe(false);
+            expect(isWithinDayShift('02:00')).toBe(false);
+            expect(isWithinDayShift('07:59')).toBe(false);
+        });
+
+        it('should return true if no time provided (backwards compatibility)', () => {
+            expect(isWithinDayShift()).toBe(true);
+            expect(isWithinDayShift(undefined)).toBe(true);
+        });
+
+        it('should return true for invalid time format', () => {
+            expect(isWithinDayShift('invalid')).toBe(true);
+        });
+    });
+
+    describe('isAdmittedDuringShift', () => {
+        const recordDate = '2026-01-03';
+        const nextDay = '2026-01-04';
+
+        describe('day shift filtering', () => {
+            it('should include patients admitted during day shift on same date', () => {
+                expect(isAdmittedDuringShift(recordDate, recordDate, '10:00', 'day')).toBe(true);
+                expect(isAdmittedDuringShift(recordDate, recordDate, '15:00', 'day')).toBe(true);
+            });
+
+            it('should exclude patients admitted during night shift on same date', () => {
+                expect(isAdmittedDuringShift(recordDate, recordDate, '22:00', 'day')).toBe(false);
+                expect(isAdmittedDuringShift(recordDate, recordDate, '20:00', 'day')).toBe(false);
+            });
+
+            it('should exclude patients admitted on next day', () => {
+                expect(isAdmittedDuringShift(recordDate, nextDay, '02:00', 'day')).toBe(false);
+                expect(isAdmittedDuringShift(recordDate, nextDay, '10:00', 'day')).toBe(false);
+            });
+
+            it('should include patients already hospitalized (earlier date)', () => {
+                expect(isAdmittedDuringShift(recordDate, '2026-01-02', '10:00', 'day')).toBe(true);
+            });
+        });
+
+        describe('night shift filtering (cross-day)', () => {
+            it('should include patients admitted during day shift on record date', () => {
+                expect(isAdmittedDuringShift(recordDate, recordDate, '10:00', 'night')).toBe(true);
+            });
+
+            it('should include patients admitted during night hours on record date', () => {
+                expect(isAdmittedDuringShift(recordDate, recordDate, '22:00', 'night')).toBe(true);
+            });
+
+            it('should include patients admitted on NEXT day early morning (cross-day)', () => {
+                // This is the key test: patient admitted Jan 4th 02:00 should appear in Jan 3rd night shift
+                expect(isAdmittedDuringShift(recordDate, nextDay, '02:00', 'night')).toBe(true);
+                expect(isAdmittedDuringShift(recordDate, nextDay, '07:00', 'night')).toBe(true);
+            });
+
+            it('should exclude patients admitted on next day during day shift', () => {
+                // Patient admitted Jan 4th 10:00 should NOT appear in Jan 3rd night shift
+                expect(isAdmittedDuringShift(recordDate, nextDay, '10:00', 'night')).toBe(false);
+            });
+
+            it('should include patients already hospitalized (earlier date)', () => {
+                expect(isAdmittedDuringShift(recordDate, '2026-01-02', '10:00', 'night')).toBe(true);
+            });
+        });
+
+        it('should use record date if admission date is missing', () => {
+            expect(isAdmittedDuringShift(recordDate, undefined, '10:00', 'day')).toBe(true);
+            expect(isAdmittedDuringShift(recordDate, undefined, '22:00', 'day')).toBe(false);
         });
     });
 });

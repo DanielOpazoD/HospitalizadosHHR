@@ -27,7 +27,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { DailyRecord, PatientData } from '@/types';
 import { BEDS } from '@/constants';
-import { getShiftSchedule } from '@/utils/dateUtils';
+import { getShiftSchedule, isAdmittedDuringShift } from '@/utils/dateUtils';
 import { getWhatsAppConfig, getMessageTemplates } from '@/services/integrations/whatsapp/whatsappService';
 import { logNurseHandoffModified, logMedicalHandoffModified } from '@/services/admin/auditService';
 
@@ -68,8 +68,23 @@ export const useHandoffLogic = ({
     const visibleBeds = useMemo(() => {
         if (!record) return [];
         const activeExtras = record.activeExtraBeds || [];
-        return BEDS.filter(bed => !bed.isExtra || activeExtras.includes(bed.id));
-    }, [record]);
+        const baseBeds = BEDS.filter(bed => !bed.isExtra || activeExtras.includes(bed.id));
+
+        // Filter patients based on shift and admission date/time
+        // Night shift spans two calendar days (e.g., Jan 3rd 20:00 → Jan 4th 08:00)
+        return baseBeds.filter(bed => {
+            const patient = record.beds[bed.id];
+            // Include blocked beds and empty beds
+            if (patient.isBlocked || !patient.patientName) return true;
+            // Check if patient was admitted during the selected shift
+            return isAdmittedDuringShift(
+                record.date,
+                patient.admissionDate,
+                patient.admissionTime,
+                selectedShift
+            );
+        });
+    }, [record, selectedShift]);
 
     const hasAnyPatients = useMemo(() => {
         if (!record) return false;

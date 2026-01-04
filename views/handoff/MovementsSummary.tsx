@@ -3,17 +3,40 @@
  * 
  * Displays summary tables for discharges (Altas), transfers (Traslados),
  * and CMA (day hospitalization) patients in the nursing handoff view.
+ * 
+ * Filters movements based on the selected shift:
+ * - Day shift: Shows only movements that occurred between 08:00-20:00
+ * - Night shift: Shows only movements that occurred between 20:00-08:00
+ * - CMA is always day shift only (by definition)
  */
 
 import React from 'react';
 import { UserMinus, ArrowRightLeft, Sun } from 'lucide-react';
 import type { DailyRecord } from '@/types';
+import { isWithinDayShift } from '@/utils/dateUtils';
+import type { NursingShift } from '@/hooks/useHandoffLogic';
 
 interface MovementsSummaryProps {
     record: DailyRecord;
+    selectedShift: NursingShift;
 }
 
-export const MovementsSummary: React.FC<MovementsSummaryProps> = ({ record }) => {
+export const MovementsSummary: React.FC<MovementsSummaryProps> = ({ record, selectedShift }) => {
+    // Filter discharges by shift based on exit time
+    const filteredDischarges = (record.discharges || []).filter(d => {
+        const isDay = isWithinDayShift(d.time);
+        return selectedShift === 'day' ? isDay : !isDay;
+    });
+
+    // Filter transfers by shift based on exit time
+    const filteredTransfers = (record.transfers || []).filter(t => {
+        const isDay = isWithinDayShift(t.time);
+        return selectedShift === 'day' ? isDay : !isDay;
+    });
+
+    // CMA is always day shift only (by definition - ambulatory day hospitalization)
+    const filteredCMA = selectedShift === 'day' ? (record.cma || []) : [];
+
     return (
         <div className="space-y-4 print:space-y-2 print:text-[11px] print:leading-tight">
             {/* Discharges - Simplified Read-Only */}
@@ -22,8 +45,8 @@ export const MovementsSummary: React.FC<MovementsSummaryProps> = ({ record }) =>
                     <UserMinus size={20} className="text-red-500 print:w-4 print:h-4" />
                     Altas
                 </h3>
-                {(!record.discharges || record.discharges.length === 0) ? (
-                    <p className="text-slate-400 italic text-sm print:text-[10px]">No hay altas registradas hoy.</p>
+                {(filteredDischarges.length === 0) ? (
+                    <p className="text-slate-400 italic text-sm print:text-[10px]">No hay altas registradas en este turno.</p>
                 ) : (
                     <table className="w-full text-left text-sm print:text-[10px] border-collapse print:[&_th]:p-1 print:[&_td]:p-1 print:table-fixed">
                         <thead>
@@ -37,7 +60,7 @@ export const MovementsSummary: React.FC<MovementsSummaryProps> = ({ record }) =>
                             </tr>
                         </thead>
                         <tbody>
-                            {record.discharges.map(d => (
+                            {filteredDischarges.map(d => (
                                 <tr key={d.id} className="border-b border-slate-100 print:border-slate-300 print:text-[10px]">
                                     <td className="p-2 border-r border-slate-200 truncate">{d.bedName}</td>
                                     <td className="p-2 border-r border-slate-200 truncate">
@@ -61,8 +84,8 @@ export const MovementsSummary: React.FC<MovementsSummaryProps> = ({ record }) =>
                     <ArrowRightLeft size={20} className="text-blue-500 print:w-4 print:h-4" />
                     Traslados
                 </h3>
-                {(!record.transfers || record.transfers.length === 0) ? (
-                    <p className="text-slate-400 italic text-sm print:text-[10px]">No hay traslados registrados hoy.</p>
+                {(filteredTransfers.length === 0) ? (
+                    <p className="text-slate-400 italic text-sm print:text-[10px]">No hay traslados registrados en este turno.</p>
                 ) : (
                     <table className="w-full text-left text-sm print:text-[10px] border-collapse print:[&_th]:p-1 print:[&_td]:p-1 print:table-fixed">
                         <thead>
@@ -77,7 +100,7 @@ export const MovementsSummary: React.FC<MovementsSummaryProps> = ({ record }) =>
                             </tr>
                         </thead>
                         <tbody>
-                            {record.transfers.map(t => (
+                            {filteredTransfers.map(t => (
                                 <tr key={t.id} className="border-b border-slate-100 print:border-slate-300 print:text-[10px]">
                                     <td className="p-2 border-r border-slate-200 truncate">{t.bedName}</td>
                                     <td className="p-2 border-r border-slate-200 truncate">
@@ -102,8 +125,8 @@ export const MovementsSummary: React.FC<MovementsSummaryProps> = ({ record }) =>
                     <Sun size={20} className="text-orange-500 print:w-4 print:h-4" />
                     Hospitalización Diurna / CMA
                 </h3>
-                {(!record.cma || record.cma.length === 0) ? (
-                    <p className="text-slate-400 italic text-sm print:text-[10px]">No hay pacientes de CMA hoy.</p>
+                {(filteredCMA.length === 0) ? (
+                    <p className="text-slate-400 italic text-sm print:text-[10px]">{selectedShift === 'day' ? 'No hay pacientes de CMA hoy.' : 'CMA solo se muestra en turno largo.'}</p>
                 ) : (
                     <table className="w-full text-left text-sm print:text-[10px] border-collapse print:[&_th]:p-1 print:[&_td]:p-1 print:table-fixed">
                         <thead>
@@ -115,7 +138,7 @@ export const MovementsSummary: React.FC<MovementsSummaryProps> = ({ record }) =>
                             </tr>
                         </thead>
                         <tbody>
-                            {record.cma.map(c => (
+                            {filteredCMA.map(c => (
                                 <tr key={c.id} className="border-b border-slate-100 print:border-slate-300 print:text-[10px]">
                                     <td className="p-2 border-r border-slate-200 truncate">{c.bedName}</td>
                                     <td className="p-2 border-r border-slate-200 truncate">
